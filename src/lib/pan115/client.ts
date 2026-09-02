@@ -6,7 +6,7 @@
  * 2. 真实 115 官方扫码状态轮询（等待扫码 -> 已扫码待确认 -> 登录成功下发凭证）
  * 3. 真实 115 Cookie 校验与官方用户画像解析（my.115.com 鉴权与容量解析）
  * 4. 真实 115 云端文件目录树遍历与视频素材拉取
- * 5. 全流程无模拟数据，纯正生产级别对接
+ * 5. 真实 115 视频图片帧、封面与故事板拉取 (在服务端带 Cookie 请求并转为 Base64 JPEG Data-URI)
  */
 
 import QRCode from "qrcode";
@@ -25,6 +25,8 @@ export const PAN115_ENDPOINTS = {
   userNav: "https://my.115.com/?ct=ajax&ac=nav",
   userCard: "https://webapi.115.com/user/card",
   listFiles: "https://webapi.115.com/files",
+  videoInfo: "https://webapi.115.com/files/video",
+  storyboard: "https://webapi.115.com/files/storyboard",
   openApi: "https://proapi.115.com",
   openAuth: "https://passportapi.115.com/open/authorize",
   openRefresh: "https://passportapi.115.com/open/refreshToken",
@@ -108,7 +110,6 @@ export async function create115QrSession(app: Pan115AppType = "ios"): Promise<Pa
     console.error("[Pan115] 获取官方二维码接口异常:", err);
   }
 
-  // 若官方直连暂时异常，生成标准的 115 官方 App 扫码协议二维码
   const timestamp = Math.floor(Date.now() / 1000);
   const fallbackUid = `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
   const officialScanUrl = `https://115.com/bridge/login?uid=${fallbackUid}&app=${app}&time=${timestamp}`;
@@ -181,7 +182,7 @@ export async function poll115QrStatus(
         }
       }
     }
-  } catch (err) {
+  } catch {
     // 网络临时波动
   }
 
@@ -200,7 +201,6 @@ export async function verify115Cookie(rawCookie: string): Promise<{ ok: boolean;
     return { ok: false, detail: "Cookie 不能为空" };
   }
 
-  // 必须包含核心凭证字段之一
   const hasUid = /UID=[^;]+/i.test(cookie);
   const hasCid = /CID=[^;]+/i.test(cookie);
   const hasSeid = /SEID=[^;]+/i.test(cookie);
@@ -261,7 +261,6 @@ export async function verify115Cookie(rawCookie: string): Promise<{ ok: boolean;
     console.error("[Pan115] Cookie 校验请求失败:", err);
   }
 
-  // 从 Cookie 中解析 UID
   const matchUid = cookie.match(/UID=([^;]+)/i)?.[1];
   if (matchUid) {
     const user: Pan115User = {
@@ -305,7 +304,153 @@ export async function fetch115UserProfile(cookie: string, deviceName = "Apple �
 }
 
 /**
- * 5. 生产：遍历 115 云端真实目录与视频素材
+ * 5. 核心：在服务端带 115 Cookie 凭证直接抓取真实图片，并输出为 100% 离线 Base64 JPEG Data URI
+ */
+export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: string): Promise<string | null> {
+  if (!urlOrPickcode) return null;
+
+  const candidateUrls: string[] = [];
+  if (urlOrPickcode.startsWith("http")) {
+    candidateUrls.push(urlOrPickcode);
+  } else {
+    candidateUrls.push(
+      `https://imgload.115.com/?pickcode=${urlOrPickcode}&type=thumb`,
+      `https://v.anxia.com/?pickcode=${urlOrPickcode}&format=jpg`,
+      `https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`,
+    );
+  }
+
+  for (const targetUrl of candidateUrls) {
+    try {
+      const res = await fetch(targetUrl, {
+        headers: {
+          Cookie: cookie || "",
+          Referer: "https://115.com/",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(4000),
+      });
+
+      if (res.ok) {
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("image") || ct.includes("octet-stream") || ct.includes("jpeg") || ct.includes("png")) {
+          const buf = await res.arrayBuffer();
+          if (buf.byteLength > 400) {
+            const mime = ct.includes("png") ? "image/png" : "image/jpeg";
+            const b64 = Buffer.from(buf).toString("base64");
+            return `data:${mime};base64,${b64}`;
+          }
+        }
+      }
+    } catch {
+      // try next
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 6. 核心：从 115 官方视频接口获取真实视频快照 / 故事板雪碧图帧
+ */
+export async function fetch115VideoRealFrames(
+  cookie: string,
+  pickCode: string,
+): Promise<{ poster?: string; frames: string[] }> {
+  if (!pickCode) return { frames: [] };
+
+  let posterBase64: string | undefined = undefined;
+  const framesBase64: string[] = [];
+
+  // 1. 查询 115 官方视频详情 API (获取真实封面图与转码快照)
+  try {
+    const videoApiUrl = `${PAN115_ENDPOINTS.videoInfo}?pickcode=${pickCode}`;
+    const res = await fetch(videoApiUrl, {
+      headers: {
+        Cookie: cookie || "",
+        Referer: "https://115.com/",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(4000),
+    });
+
+    if (res.ok) {
+      const json = (await res.json()) as {
+        state?: boolean;
+        data?: {
+          thumb_url?: string;
+          snap_url?: string;
+          video_url?: string;
+          cover_url?: string;
+          play_url?: Array<{ url?: string; title?: string }>;
+        };
+      };
+
+      if (json.data) {
+        const targetThumb = json.data.thumb_url || json.data.snap_url || json.data.cover_url;
+        if (targetThumb) {
+          const uri = await fetch115ImageAsDataUri(cookie, targetThumb);
+          if (uri) {
+            posterBase64 = uri;
+            framesBase64.push(uri);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[Pan115] 获取视频快照失败:", err);
+  }
+
+  // 2. 尝试从 115 故事板 / 雪碧图接口获取多时间戳真实帧
+  try {
+    const sbUrl = `${PAN115_ENDPOINTS.storyboard}?pickcode=${pickCode}`;
+    const sbRes = await fetch(sbUrl, {
+      headers: {
+        Cookie: cookie || "",
+        Referer: "https://115.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      },
+      signal: AbortSignal.timeout(3500),
+    });
+    if (sbRes.ok) {
+      const sbJson = (await sbRes.json()) as {
+        state?: boolean;
+        data?: {
+          thumb?: string;
+          list?: Array<{ url?: string; time?: number }>;
+        };
+      };
+      if (sbJson.data?.list && Array.isArray(sbJson.data.list)) {
+        for (const item of sbJson.data.list.slice(0, 6)) {
+          if (item.url) {
+            const frameUri = await fetch115ImageAsDataUri(cookie, item.url);
+            if (frameUri && !framesBase64.includes(frameUri)) {
+              framesBase64.push(frameUri);
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // 3. 若仍未提取到，直接请求 pickcode 原图
+  if (!posterBase64) {
+    const directThumb = await fetch115ImageAsDataUri(cookie, pickCode);
+    if (directThumb) {
+      posterBase64 = directThumb;
+      if (framesBase64.length === 0) framesBase64.push(directThumb);
+    }
+  }
+
+  return { poster: posterBase64, frames: framesBase64 };
+}
+
+/**
+ * 7. 生产：遍历 115 云端真实目录与视频素材
  */
 export async function fetchReal115Files(
   cookie: string,
@@ -392,7 +537,7 @@ export async function fetchReal115Files(
 }
 
 /**
- * 6. 官方开放平台 OAuth 2.0 探测与操作
+ * 8. 官方开放平台 OAuth 2.0 探测与操作
  */
 export function authorizeUrl(cfg: Pick<Pan115Config, "appId" | "redirectUri">, state: string) {
   const u = new URL(PAN115_ENDPOINTS.openAuth);

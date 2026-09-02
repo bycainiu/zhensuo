@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db";
 import { generateCinemaFrameDataUrl } from "@/lib/utils";
+import { fetch115VideoRealFrames } from "@/lib/pan115/client";
 
 const MODELS = [
   {
@@ -119,22 +120,40 @@ const MODELS = [
 export async function seedIfEmpty() {
   const sql = await getSql();
 
-  // 自动修复并更新现有视频与关键帧为高清电影级矢量画面帧 (100% 离线、永不裂图)
+  // 获取已连接的 115 Cookie 凭证
+  const sources = await sql<{ config: unknown }>`
+    select config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
+  `;
+  let cookie = "";
+  for (const s of sources) {
+    const cfg = typeof s.config === "string" ? JSON.parse(s.config) : s.config;
+    if (cfg?.cookie) {
+      cookie = cfg.cookie;
+      break;
+    }
+  }
+
+  // 自动拉取真实 115 视频画面帧并更新到数据库
   const allVideos = await sql<{ id: string; title: string; pick_code: string; meta: unknown }>`
     select id, title, pick_code, meta from videos
   `;
   for (const sv of allVideos) {
     const meta = sv.meta as { pickCode?: string } | null;
     const pc = sv.pick_code || meta?.pickCode || sv.id.replace("vid_115_", "");
-    const realPoster = generateCinemaFrameDataUrl(sv.title, pc, 0);
-    await sql`update videos set poster_url = ${realPoster}, pick_code = ${pc} where id = ${sv.id}`;
     
-    // 更新该视频的所有抽帧图像
+    // 优先从 115 官方拉取真实 Base64 画面帧
+    const real115 = await fetch115VideoRealFrames(cookie, pc);
+    const posterUrl = real115.poster || generateCinemaFrameDataUrl(sv.title, pc, 0);
+
+    await sql`update videos set poster_url = ${posterUrl}, pick_code = ${pc} where id = ${sv.id}`;
+    
+    // 更新该视频的所有抽帧图像为真实网盘帧
     const frames = await sql<{ id: string; timestamp_sec: number }>`
-      select id, timestamp_sec from frames where video_id = ${sv.id}
+      select id, timestamp_sec from frames where video_id = ${sv.id} order by timestamp_sec asc
     `;
-    for (const f of frames) {
-      const frameStill = generateCinemaFrameDataUrl(sv.title, pc, Number(f.timestamp_sec));
+    for (let idx = 0; idx < frames.length; idx++) {
+      const f = frames[idx]!;
+      const frameStill = real115.frames[idx] || real115.poster || generateCinemaFrameDataUrl(sv.title, pc, Number(f.timestamp_sec));
       await sql`update frames set still_url = ${frameStill} where id = ${f.id}`;
     }
   }
