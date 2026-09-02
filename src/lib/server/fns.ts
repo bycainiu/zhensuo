@@ -160,14 +160,19 @@ export const listVideos = createServerFn({ method: "GET" })
         } else {
           // 115 网盘素材：拉取真实 115 图片，绝不使用演示图
           if (!poster || poster.startsWith("data:image/svg") || poster.startsWith("/stills/")) {
+            let realImg: string | null = null;
             if (pc && activeCookie) {
               try {
-                const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
-                if (realImg) {
-                  poster = realImg;
-                  await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
-                }
+                realImg = await fetch115ImageAsDataUri(activeCookie, pc);
               } catch {}
+            }
+            if (realImg) {
+              poster = realImg;
+              await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
+            } else if (poster.startsWith("/stills/")) {
+              // 旧版本遗留的演示图脏数据：115 拉不到真图时替换为诚实占位，绝不冒充真实画面
+              poster = generateCinemaFrameDataUrl(row.title, pc, 0);
+              await sql`update videos set poster_url = ${poster} where id = ${row.id}`;
             }
           }
         }
@@ -244,17 +249,24 @@ export const getVideo = createServerFn({ method: "POST" })
       }
     } else {
       // 115 导入视频：拉取真实 115 快照
+      let gotReal = false;
       if (pc && activeCookie) {
         try {
           const real115 = await fetch115VideoRealFrames(activeCookie, pc);
           if (real115.poster) {
             poster = real115.poster;
+            gotReal = true;
             await sql`update videos set poster_url = ${real115.poster} where id = ${video.id}`;
           }
           if (real115.frames.length > 0) {
             realFramesList = real115.frames;
           }
         } catch {}
+      }
+      // 旧版本遗留的演示图脏数据：拉不到真图时替换为诚实占位，绝不冒充真实画面
+      if (!gotReal && poster.startsWith("/stills/")) {
+        poster = generateCinemaFrameDataUrl(video.title, pc, 0);
+        await sql`update videos set poster_url = ${poster} where id = ${video.id}`;
       }
     }
 
@@ -282,6 +294,10 @@ export const getVideo = createServerFn({ method: "POST" })
           f.still_url = poster;
           await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
         }
+      } else if (!cat && f.still_url && f.still_url.startsWith("/stills/")) {
+        // 115 视频帧上的旧演示图脏数据：无真实画面时替换为诚实占位
+        f.still_url = generateCinemaFrameDataUrl(video.title, pc, Number(f.timestamp_sec));
+        await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
       }
     }
 
@@ -801,19 +817,22 @@ export const browse115 = createServerFn({ method: "GET" })
     }
 
     // 若存在真实连接，优先请求 115 官方云端文件列表
+    let listError: string | undefined;
     if (activeCookie) {
       const realFiles = await fetchReal115Files(activeCookie, cid, search);
-      if (realFiles.length > 0) {
+      if (realFiles.items.length > 0) {
         return {
           folder: { cid, name: cid === "0" ? "115 云端根目录" : `目录 (${cid})`, path: `/${cid}` },
-          items: realFiles,
+          items: realFiles.items,
         };
       }
+      listError = realFiles.error;
     }
 
     return {
       folder: { cid: "0", name: "115 云端根目录", path: "/" },
       items: [] as PanFile[],
+      error: listError ?? (activeCookie ? undefined : "未找到已连接的 115 Cookie，请先扫码或使用 Cookie 登录"),
     };
   });
 
@@ -1277,7 +1296,9 @@ async function materializeVideo(id: string) {
   const colabUrl = colabSetting[0] ? asJson<string>(colabSetting[0].value, "") : "";
 
   const real115 = await fetch115VideoRealFrames(cookie, pickCode);
-  const realVideoPoster = real115.poster || (real115.frames[0]) || video.poster_url || generateCinemaFrameDataUrl(video.title, pickCode, 0);
+  // 旧版本遗留的演示图脏数据不允许作为回退：115 视频宁可显示"解析中"占位也不冒充真实画面
+  const legacyDemo = video.poster_url?.startsWith("/stills/") ?? false;
+  const realVideoPoster = real115.poster || (real115.frames[0]) || (legacyDemo ? undefined : video.poster_url) || generateCinemaFrameDataUrl(video.title, pickCode, 0);
 
   // 1. 持久化更新视频真实海报
   if (realVideoPoster && !realVideoPoster.startsWith("data:image/svg")) {
@@ -1385,7 +1406,10 @@ async function materializeVideo(id: string) {
     await sql`
       update videos
       set status = 'ready',
-          poster_url = case when poster_url like 'data:image/svg%' and ${realVideoPoster} not like 'data:image/svg%' then ${realVideoPoster} else poster_url end
+          poster_url = case
+            when poster_url like 'data:image/svg%' and ${realVideoPoster} not like 'data:image/svg%' then ${realVideoPoster}
+            when poster_url like '/stills/%' then ${realVideoPoster}
+            else poster_url end
       where id = ${id}
     `;
   }

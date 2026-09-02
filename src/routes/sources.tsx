@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatBytes, formatClock, pan115MediaSrc } from "@/lib/utils";
+import { getStored115Cookie } from "@/lib/pan115/client";
 import { toast } from "sonner";
 import type { Pan115AppType, Pan115QrSession, Pan115User, PanFile } from "@/lib/types";
 
@@ -76,7 +77,7 @@ export function SourcesPage() {
 
   const sources = useQuery({ queryKey: ["sources"], queryFn: () => listSources() });
   const browse = useQuery({
-    queryKey: ["115", cid, searchQuery],
+    queryKey: ["115", cid, searchQuery, getStored115Cookie()],
     queryFn: () => browse115({ data: { cid, search: searchQuery } }),
   });
 
@@ -598,8 +599,14 @@ export function SourcesPage() {
                   正在读取 115 网盘目录...
                 </div>
               ) : (browse.data?.items ?? []).length === 0 ? (
-                <div className="p-12 text-center text-sm text-muted">
-                  该文件夹下暂无视频文件，或目录为空。
+                <div className="p-12 text-center text-sm text-muted space-y-2">
+                  <p>{browse.data?.error ? `115 接口报错：${browse.data.error}` : "该文件夹下暂无视频文件，或目录为空。"}</p>
+                  {browse.data?.error && (
+                    <p className="text-xs text-amber-400/90">
+                      常见原因：非 Web 端 (iOS / TV / 客户端) 扫码下发的 Cookie 无法调用 115 网页文件接口。
+                      请切换到「Web 网页端」形态重新扫码登录，或改用 Cookie 会话直连后重试。
+                    </p>
+                  )}
                 </div>
               ) : (
                 <ul className="divide-y divide-border">

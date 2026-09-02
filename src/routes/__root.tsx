@@ -50,7 +50,12 @@ function RootComponent() {
         } catch {}
       }
       if (user || savedCookie) {
-        void restore115Session({ data: { user, cookie: savedCookie } });
+        void restore115Session({ data: { user, cookie: savedCookie } }).then(() => {
+          // 凭证恢复完成后刷新依赖 Cookie 的查询（115 目录浏览、片库真实图拉取）
+          void queryClient.invalidateQueries({ queryKey: ["115"] });
+          void queryClient.invalidateQueries({ queryKey: ["videos"] });
+          void queryClient.invalidateQueries({ queryKey: ["sources"] });
+        });
       }
     }
   }, []);

@@ -198,14 +198,21 @@ async function repairSvgPlaceholders() {
     } else {
       // 115 导入视频：必须抓取真实网盘画面，绝不覆盖为演示素材图
       if (!newPoster || newPoster.startsWith("data:image/svg") || newPoster.startsWith("/stills/")) {
+        let gotReal = false;
         if (cookie && pc) {
           try {
             const real115 = await fetch115VideoRealFrames(cookie, pc);
             if (real115.poster) {
               newPoster = real115.poster;
+              gotReal = true;
               await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
             }
           } catch {}
+        }
+        // 旧版本遗留的演示图脏数据：115 拉不到真图时替换为诚实占位，绝不冒充真实画面
+        if (!gotReal && newPoster.startsWith("/stills/")) {
+          newPoster = generateCinemaFrameDataUrl(sv.title, pc, 0);
+          await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
         }
       }
     }
@@ -227,6 +234,10 @@ async function repairSvgPlaceholders() {
         if (!f.still_url || f.still_url.startsWith("data:image/svg") || f.still_url.startsWith("/stills/")) {
           await sql`update frames set still_url = ${newPoster} where id = ${f.id}`;
         }
+      } else if (f.still_url && f.still_url.startsWith("/stills/")) {
+        // 115 视频帧上的旧演示图脏数据：无真实画面时替换为诚实占位
+        const honest = generateCinemaFrameDataUrl(sv.title, pc, Number(f.timestamp_sec));
+        await sql`update frames set still_url = ${honest} where id = ${f.id}`;
       }
     }
   }

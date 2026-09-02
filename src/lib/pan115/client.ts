@@ -582,13 +582,15 @@ export async function fetch115VideoRealFrames(
 
 /**
  * 7. 生产：遍历 115 云端真实目录与视频素材
+ * 返回 { items, error }：115 接口拒绝 (state=false / HTTP 非 200 / 结构异常) 时
+ * 透传官方报错，绝不静默吞掉 —— 否则前端只会显示"目录为空"，无法排查 Cookie 形态问题。
  */
 export async function fetchReal115Files(
   cookie: string,
   cid = "0",
   search = "",
-): Promise<PanFile[]> {
-  if (!cookie.trim()) return [];
+): Promise<{ items: PanFile[]; error?: string }> {
+  if (!cookie.trim()) return { items: [], error: "未提供 115 Cookie" };
 
   const url = new URL(PAN115_ENDPOINTS.listFiles);
   url.searchParams.set("aid", "1");
@@ -609,6 +611,7 @@ export async function fetchReal115Files(
         Cookie: cookie,
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36",
         Referer: "https://115.com/",
+        Accept: "application/json, text/javascript, */*; q=0.01",
       },
       signal: AbortSignal.timeout(6000),
     });
@@ -616,54 +619,75 @@ export async function fetchReal115Files(
     if (res.ok) {
       const json = (await res.json()) as {
         state?: boolean;
-        data?: Array<{
-          fid?: string;
-          cid?: string;
-          pid?: string;
-          n?: string;
-          s?: number;
-          pc?: string;
-          ico?: string;
-          play_long?: number;
-          vdi?: number;
-          t?: string;
-          u?: string;
-        }>;
+        error?: string;
+        message?: string;
+        errno?: string;
+        data?: unknown;
       };
 
-      if (json.data && Array.isArray(json.data)) {
+      // 115 明确拒绝：常见于非 Web 端 Cookie (tv/ios 客户端凭证) 调用网页文件接口
+      if (json.state === false) {
+        const msg = json.error || json.message || `115 接口拒绝访问 (errno=${json.errno ?? "?"})`;
+        console.error(`[Pan115] files 列表被 115 拒绝: state=false, error=${msg} — 多为 Cookie 形态与接口不匹配，请尝试改用「Web 网页端」重新扫码`);
+        return { items: [], error: msg };
+      }
+
+      // 兼容两种返回结构：data 直接是列表，或 data.list 包裹
+      const raw = json.data as unknown;
+      const arr: Array<Record<string, unknown>> | null = Array.isArray(raw)
+        ? (raw as Array<Record<string, unknown>>)
+        : raw && typeof raw === "object" && Array.isArray((raw as { list?: unknown }).list)
+          ? ((raw as { list: Array<Record<string, unknown>> }).list)
+          : null;
+
+      if (arr) {
         const videoExts = [".mp4", ".mov", ".mkv", ".flv", ".ts", ".avi", ".m4v", ".webm", ".wmv"];
-        return json.data.map((item): PanFile => {
+        const items = arr.map((item): PanFile => {
           const isDir = Boolean(item.cid && !item.fid);
-          const name = item.n || "未命名";
+          const name = String(item.n || "未命名");
           const ext = name.slice(name.lastIndexOf(".")).toLowerCase();
           const isVideo = isDir || videoExts.includes(ext) || item.play_long != null;
 
           return {
-            fid: isDir ? String(item.cid) : String(item.fid || item.cid),
+            fid: String(item.fid || item.cid),
             pid: String(item.pid || cid),
             name,
             isDir,
-            sizeMb: Math.round(((item.s || 0) / (1024 * 1024)) * 10) / 10,
-            duration: item.play_long ? Math.round(item.play_long) : null,
-            pickCode: item.pc || "",
-            ico: item.ico || (isDir ? "folder" : "video"),
+            sizeMb: Math.round((Number(item.s || 0) / (1024 * 1024)) * 10) / 10,
+            duration: item.play_long ? Math.round(Number(item.play_long)) : null,
+            pickCode: String(item.pc || ""),
+            ico: typeof item.ico === "string" && item.ico ? item.ico : isDir ? "folder" : "video",
             path: `/${name}`,
             indexed: false,
             videoId: isDir ? null : `vid_115_${item.pc || item.fid}`,
-            still: pan115MediaSrc(
-              item.u || (item.ico && item.ico.startsWith("http") ? item.ico : null),
-            ) || (item.pc ? `/api/pan115/img?pc=${encodeURIComponent(item.pc)}` : null),
-            updateTime: item.t,
+            still:
+              pan115MediaSrc(
+                (typeof item.u === "string" && item.u) ||
+                (typeof item.ico === "string" && item.ico.startsWith("http") ? item.ico : null),
+              ) || (item.pc ? `/api/pan115/img?pc=${encodeURIComponent(String(item.pc))}` : null),
+            updateTime: typeof item.t === "string" ? item.t : undefined,
           };
         }).filter((f) => f.isDir || videoExts.some((e) => f.name.toLowerCase().endsWith(e)));
-      }
-    }
-  } catch (err) {
-    console.error("[Pan115] 获取网盘文件列表失败:", err);
-  }
 
-  return [];
+        if (items.length === 0 && arr.length > 0) {
+          console.log(`[Pan115] 目录共 ${arr.length} 项，但无视频扩展名文件 (已过滤)`);
+        }
+        return { items };
+      }
+
+      const msg = "115 返回结构无法解析 (data 既非列表也无 list 字段)";
+      console.error(`[Pan115] ${msg}:`, JSON.stringify(json).slice(0, 300));
+      return { items: [], error: msg };
+    }
+
+    const msg = `115 文件接口 HTTP ${res.status}`;
+    console.error(`[Pan115] ${msg} (服务器 IP 调用 webapi 可能被 115 拦截)`);
+    return { items: [], error: msg };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "请求 115 文件列表异常";
+    console.error("[Pan115] 获取网盘文件列表失败:", err);
+    return { items: [], error: msg };
+  }
 }
 
 /**
