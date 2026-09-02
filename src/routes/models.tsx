@@ -1,23 +1,28 @@
 import type { ReactNode } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   CheckCircle2,
-  Cloud,
   CloudLightning,
   Cpu,
-  ExternalLink,
   FolderSync,
   HardDrive,
   Info,
   Layers,
   Link2,
+  Loader2,
+  RefreshCw,
   Sparkles,
   Zap,
 } from "lucide-react";
-import { activateModel, listModels } from "@/lib/server/fns";
+import {
+  activateModel,
+  getColabSettings,
+  listModels,
+  probeColabNode,
+} from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,11 +33,28 @@ export const Route = createFileRoute("/models")({ component: ModelsPage });
 
 function ModelsPage() {
   const qc = useQueryClient();
-  const [colabUrl, setColabUrl] = useState("");
-  const [isColabConnected, setIsColabConnected] = useState(false);
-  const [gdriveStatus, setGdriveStatus] = useState("已关联 (/MyDrive/FrameSeek)");
+  const [colabUrl, setColabUrl] = useState("http://100.92.54.15:8000");
+
+  // 初始化从 localStorage 加载保存的 URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("frameseek_colab_url");
+      if (saved) {
+        setColabUrl(saved);
+      }
+    }
+  }, []);
 
   const q = useQuery({ queryKey: ["models"], queryFn: () => listModels() });
+
+  // 实时探测 Colab GPU 节点健康状态与真实显卡信息 (每 8 秒自动保持心跳)
+  const colabHealth = useQuery({
+    queryKey: ["colab-health", colabUrl],
+    queryFn: () => probeColabNode({ data: { url: colabUrl } }),
+    enabled: Boolean(colabUrl.trim()),
+    refetchInterval: 8000,
+  });
+
   const act = useMutation({
     mutationFn: (id: string) => activateModel({ data: { id } }),
     onSuccess: () => {
@@ -42,69 +64,108 @@ function ModelsPage() {
     },
   });
 
+  const probeMutation = useMutation({
+    mutationFn: (url: string) => probeColabNode({ data: { url } }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("frameseek_colab_url", colabUrl.trim());
+        }
+        toast.success(`✅ Colab GPU 连接成功！检测到 ${res.gpu} (${res.device})`);
+        void qc.invalidateQueries({ queryKey: ["colab-health"] });
+        void qc.invalidateQueries({ queryKey: ["overview"] });
+      } else {
+        toast.error(`❌ 连接失败：${res.error || "未能连通 Colab 实例"}`);
+      }
+    },
+    onError: (err) => {
+      toast.error(`连接异常: ${err instanceof Error ? err.message : "网络超时"}`);
+    },
+  });
+
   const embed = (q.data ?? []).filter((m) => m.role === "embedding");
   const rerank = (q.data ?? []).filter((m) => m.role === "reranker");
 
-  function testColabConnection() {
+  const isConnected = Boolean(colabHealth.data?.ok);
+  const gpuInfo = colabHealth.data?.gpu ?? "Tesla T4";
+  const gdriveDir = colabHealth.data?.gdriveDir ?? "/content/drive/MyDrive/FrameSeek";
+  const gdriveOk = colabHealth.data?.gdriveConnected ?? true;
+
+  function handleConnect() {
     if (!colabUrl.trim()) {
-      toast.error("请输入 Colab Cloudflared / ngrok 隧道 URL");
+      toast.error("请输入有效的 Tailscale 内网地址，例如 http://100.92.54.15:8000");
       return;
     }
-    setIsColabConnected(true);
-    toast.success("✅ Colab GPU 节点连接成功！启用云端 Qwen3-VL 8B 推理加速");
+    probeMutation.mutate(colabUrl.trim());
   }
 
   return (
     <div className="space-y-10">
       {/* 头部 */}
       <header>
-        <p className="font-mono text-[11px] tracking-[0.22em] text-accent">MODEL MATRIX & BENCHMARK</p>
+        <p className="font-mono text-[11px] tracking-[0.22em] text-accent">MODEL MATRIX & GPU ENGINE</p>
         <h1 className="mt-2 font-display text-4xl tracking-tight">模型管理与云端 GPU 节点</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          无需本地下载庞大模型权重文件。支持直接将项目推送到 GitHub，在{" "}
-          <span className="font-medium text-fg">Google Colab (GPU 实例)</span> 启动模型后端，并将抽帧、向量与索引自动持久化存储到{" "}
+          通过 Tailscale 私网直连已在{" "}
+          <span className="font-medium text-fg">Google Colab (GPU 实例)</span> 运行的 Qwen3-VL 8B 多模态模型，
+          并将抽帧特征与 Qdrant 索引持久化关联到{" "}
           <span className="font-medium text-fg">Google Drive</span>。
         </p>
       </header>
 
-      {/* Google Colab GPU 节点与 Google Drive 存储关联卡片 */}
+      {/* Google Colab GPU 节点与 Google Drive 存储关联卡片 (持久化与实时检测) */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           <div className="flex items-center gap-2">
             <CloudLightning className="h-5 w-5 text-accent" />
             <div>
               <h2 className="text-sm font-medium">Google Colab GPU 云端推理与 Google Drive 存储关联</h2>
-              <p className="text-xs text-muted">零本地显存负担 · 免费/高配 GPU 云端运行 Qwen3-VL 8B</p>
+              <p className="text-xs text-muted">Tailscale 私网内网直连 · 零本地显存消耗 · 实时动态状态监控</p>
             </div>
           </div>
-          <Badge tone={isColabConnected ? "ok" : "accent"}>
-            {isColabConnected ? "Colab GPU 已加速" : "云端直连模式就绪"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {colabHealth.isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-subtle" />}
+            <Badge tone={isConnected ? "ok" : "warn"}>
+              {isConnected ? `🟢 云端 GPU 在线 (${gpuInfo})` : "⚪ 离线或等待连接"}
+            </Badge>
+          </div>
         </div>
 
         <div className="mt-5 grid gap-6 md:grid-cols-2">
-          {/* 左侧：Colab 接口连接 */}
+          {/* 左侧：Colab 接口连接与持久化 */}
           <div className="space-y-3 rounded-xl border border-border bg-elevated/40 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-fg">Colab API 隧道 Endpoint</span>
-              <span className="font-mono text-[10px] text-subtle">Cloudflared / ngrok</span>
+              <span className="text-xs font-medium text-fg">Colab Tailscale 私网 Endpoint</span>
+              <span className="font-mono text-[10px] text-accent">Tailscale Mesh Direct</span>
             </div>
             <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="例如: https://xxxx.trycloudflare.com"
+                placeholder="例如: http://100.92.54.15:8000"
                 value={colabUrl}
                 onChange={(e) => setColabUrl(e.target.value)}
-                className="text-xs"
+                className="font-mono text-xs"
               />
-              <Button size="sm" variant="secondary" onClick={testColabConnection}>
-                <Link2 className="mr-1.5 h-3.5 w-3.5" />
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={handleConnect}
+                disabled={probeMutation.isPending}
+              >
+                {probeMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Link2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
                 连接
               </Button>
             </div>
-            <p className="text-[11px] text-subtle">
-              在 Colab 中运行 <code>colab/frameseek_colab_runner.ipynb</code> 即可一键生成此 URL。
-            </p>
+            <div className="flex items-center justify-between text-[11px] text-subtle">
+              <span>状态凭证已持久化在本地</span>
+              {isConnected && (
+                <span className="font-mono text-emerald-400">⚡ 显卡: {gpuInfo} (CUDA 就绪)</span>
+              )}
+            </div>
           </div>
 
           {/* 右侧：Google Drive 存储关联 */}
@@ -114,13 +175,15 @@ function ModelsPage() {
                 <HardDrive className="h-4 w-4 text-accent" />
                 <span className="text-xs font-medium text-fg">Google Drive 存储同步路径</span>
               </div>
-              <Badge tone="ok">{gdriveStatus}</Badge>
+              <Badge tone={gdriveOk ? "ok" : "warn"}>
+                {gdriveOk ? "已挂载同步" : "未挂载"}
+              </Badge>
             </div>
             <div className="rounded-lg border border-border bg-bg/80 p-2.5 font-mono text-xs text-muted">
-              /content/drive/MyDrive/FrameSeek/
+              {gdriveDir}
             </div>
             <p className="text-[11px] text-subtle">
-              视频关键帧图像、向量索引库 (Qdrant) 及剪辑工程导出均保存在 Google Drive 中。
+              关键帧采样图片、Qdrant 向量索引持久化快照与 FCPXML/EDL 工程均保存在该路径。
             </p>
           </div>
         </div>

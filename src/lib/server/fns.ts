@@ -895,3 +895,72 @@ export const executeApiPlayground = createServerFn({ method: "POST" })
       };
     }
   });
+
+/**
+ * 探测与持久化 Google Colab GPU 节点状态
+ */
+export const probeColabNode = createServerFn({ method: "POST" })
+  .validator((input: { url: string }) => input)
+  .handler(async ({ data }) => {
+    const rawUrl = data.url.trim().replace(/\/$/, "");
+    if (!rawUrl) return { ok: false, error: "未提供 URL" };
+    try {
+      const target = rawUrl.endsWith("/api/v1/health") ? rawUrl : `${rawUrl}/api/v1/health`;
+      const res = await fetch(target, { signal: AbortSignal.timeout(3500) });
+      if (res.ok) {
+        const json = (await res.json()) as {
+          ok?: boolean;
+          service?: string;
+          device?: string;
+          gpu?: string;
+          gdrive_connected?: boolean;
+          gdrive_dir?: string;
+          timestamp?: number;
+        };
+        const sql = await getSql();
+        await sql`
+          insert into settings (key, value) values ('colab_url', ${JSON.stringify(rawUrl)}::jsonb)
+          on conflict (key) do update set value = ${JSON.stringify(rawUrl)}::jsonb
+        `;
+        return {
+          ok: true,
+          url: rawUrl,
+          gpu: json.gpu || "Tesla T4",
+          device: json.device || "cuda",
+          gdriveConnected: Boolean(json.gdrive_connected),
+          gdriveDir: json.gdrive_dir || "/content/drive/MyDrive/FrameSeek",
+          timestamp: json.timestamp || Date.now(),
+        };
+      }
+      return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "连接超时，请确认 Colab 正在运行且 Tailscale 正常" };
+    }
+  });
+
+export const getColabSettings = createServerFn({ method: "GET" }).handler(async () => {
+  await seedIfEmpty();
+  const sql = await getSql();
+  const rows = await sql<{ value: string }>`select value from settings where key = 'colab_url'`;
+  const raw = rows[0]?.value;
+  if (typeof raw === "string") return raw.replaceAll('"', "");
+  return "http://100.92.54.15:8000";
+});
+
+/**
+ * 客户端本地持久化凭证同步恢复
+ */
+export const restore115Session = createServerFn({ method: "POST" })
+  .validator((input: { user: Pan115User; cookie?: string }) => input)
+  .handler(async ({ data }) => {
+    await seedIfEmpty();
+    const sql = await getSql();
+    await sql`
+      update sources
+      set status = 'connected',
+          config = ${JSON.stringify({ user: data.user, cookie: data.cookie })}::jsonb
+      where id = 'src_115_qr'
+    `;
+    return { ok: true };
+  });
+

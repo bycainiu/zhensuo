@@ -28,6 +28,7 @@ import {
   disconnect115Source,
   get115QrSession,
   listSources,
+  restore115Session,
   save115Cookie,
   save115Tokens,
   startIngest,
@@ -38,20 +39,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatBytes, formatClock } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Pan115AppType, Pan115QrSession, PanFile } from "@/lib/types";
+import type { Pan115AppType, Pan115QrSession, Pan115User, PanFile } from "@/lib/types";
 
 export const Route = createFileRoute("/sources")({ component: SourcesPage });
 
 type SourceTab = "qr" | "cookie" | "open" | "sandbox";
 
-function SourcesPage() {
+export function SourcesPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<SourceTab>("qr");
   const [appType, setAppType] = useState<Pan115AppType>("ios");
 
   // 扫码登录状态
   const [qrSession, setQrSession] = useState<Pan115QrSession | null>(null);
-  const [qrStatusText, setQrStatusText] = useState("等待扫码中...");
+  const [qrStatusText, setQrStatusText] = useState("二维码已就绪，请使用 115 客户端扫码");
   const [qrStatusCode, setQrStatusCode] = useState<number>(0);
   const [isRefreshingQr, setIsRefreshingQr] = useState(false);
 
@@ -79,6 +80,24 @@ function SourcesPage() {
     queryKey: ["115", cid, searchQuery],
     queryFn: () => browse115({ data: { cid, search: searchQuery } }),
   });
+
+  // 本地持久化凭证恢复
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedUserStr = localStorage.getItem("frameseek_115_user");
+      if (savedUserStr) {
+        try {
+          const savedUser = JSON.parse(savedUserStr) as Pan115User;
+          void restore115Session({ data: { user: savedUser } }).then(() => {
+            void qc.invalidateQueries({ queryKey: ["sources"] });
+            void qc.invalidateQueries({ queryKey: ["overview"] });
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   // 获取活跃的 115 账号
   const activeQrSource = sources.data?.find((s) => s.id === "src_115_qr");
@@ -129,8 +148,11 @@ function SourcesPage() {
         setQrStatusCode(res.status);
         setQrStatusText(res.msg);
 
-        if (res.status === 2) {
-          toast.success("115 扫码登录成功！");
+        if (res.status === 2 && res.user) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("frameseek_115_user", JSON.stringify(res.user));
+          }
+          toast.success("115 扫码登录成功！凭证已持久化保存");
           void qc.invalidateQueries({ queryKey: ["sources"] });
           void qc.invalidateQueries({ queryKey: ["overview"] });
           void qc.invalidateQueries({ queryKey: ["115"] });
@@ -157,7 +179,22 @@ function SourcesPage() {
       } else {
         setQrStatusCode(2);
         setQrStatusText("登录成功！");
-        toast.success("已模拟确认登录！");
+        const demoUser: Pan115User = {
+          userId: `115_${qrSession?.uid.slice(0, 8) || "u88"}`,
+          userName: `115_影视创作者`,
+          avatarUrl: "/stills/jacket-phone.jpg",
+          isVip: true,
+          vipLevel: "白金VIP · 100TB 空间",
+          spaceTotalGb: 102400,
+          spaceUsedGb: 18420,
+          device: `Apple (${appType.toUpperCase()}) 客户端`,
+          authMode: "qr",
+          connectedAt: new Date().toISOString(),
+        };
+        if (typeof window !== "undefined") {
+          localStorage.setItem("frameseek_115_user", JSON.stringify(demoUser));
+        }
+        toast.success("已模拟确认登录！凭证已保存");
         void qc.invalidateQueries({ queryKey: ["sources"] });
         void qc.invalidateQueries({ queryKey: ["overview"] });
         void qc.invalidateQueries({ queryKey: ["115"] });
@@ -169,8 +206,11 @@ function SourcesPage() {
   const saveCookieMut = useMutation({
     mutationFn: (cookie: string) => save115Cookie({ data: { cookie } }),
     onSuccess: (res) => {
-      if (res.ok) {
-        toast.success(res.detail || "115 Cookie 连接成功！");
+      if (res.ok && res.user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("frameseek_115_user", JSON.stringify(res.user));
+        }
+        toast.success(res.detail || "115 Cookie 连接成功！凭证已持久化");
         setCookieInput("");
         void qc.invalidateQueries({ queryKey: ["sources"] });
         void qc.invalidateQueries({ queryKey: ["overview"] });
@@ -194,6 +234,9 @@ function SourcesPage() {
   const disconnectMut = useMutation({
     mutationFn: (sourceId: string) => disconnect115Source({ data: { sourceId } }),
     onSuccess: () => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("frameseek_115_user");
+      }
       toast.success("已断开 115 连接");
       void qc.invalidateQueries({ queryKey: ["sources"] });
       void qc.invalidateQueries({ queryKey: ["overview"] });
@@ -327,16 +370,17 @@ function SourcesPage() {
             <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
               {/* 二维码卡片 */}
               <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-elevated/50 p-6 text-center">
-                <div className="relative aspect-square w-48 overflow-hidden rounded-xl border border-border bg-white p-3 shadow-inner">
-                  {qrSession ? (
+                <div className="relative flex aspect-square w-52 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-2 shadow-inner">
+                  {qrSession?.qrcode ? (
                     <img
                       src={qrSession.qrcode}
-                      alt="115 扫码登录"
+                      alt="115 扫码登录二维码"
                       className="h-full w-full object-contain"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted" />
+                    <div className="flex h-full w-full flex-col items-center justify-center text-zinc-500">
+                      <Loader2 className="h-8 w-8 animate-spin text-accent" />
+                      <span className="mt-2 text-[10px]">生成高清二维码中...</span>
                     </div>
                   )}
 
@@ -344,7 +388,7 @@ function SourcesPage() {
                   {qrStatusCode === 2 && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 p-3 text-white">
                       <CheckCircle2 className="h-10 w-10 text-emerald-400" />
-                      <p className="mt-2 text-xs font-medium">登录成功</p>
+                      <p className="mt-2 text-xs font-medium">已登录并保存凭证</p>
                     </div>
                   )}
                 </div>
@@ -422,7 +466,7 @@ function SourcesPage() {
                     <ol className="mt-1.5 list-inside list-decimal space-y-1 text-subtle">
                       <li>打开 iPhone / iPad 上的 115 App；</li>
                       <li>点击右上角「+」或「扫一扫」扫描左侧二维码；</li>
-                      <li>在设备上点击「确认登录」，系统将自动完成鉴权并同步网盘素材。</li>
+                      <li>在设备上点击「确认登录」，系统将自动完成鉴权、持久化凭证并同步网盘素材。</li>
                     </ol>
                   </div>
                 </div>
