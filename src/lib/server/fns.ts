@@ -401,6 +401,8 @@ export const updateFrameStill = createServerFn({ method: "POST" })
               imageMd5: colabJson.image_md5 || "computed",
               imageDims: colabJson.image_dims || { width: 1280, height: 720 },
               dim: 2048,
+              sourceBytes: colabJson.source_bytes,
+              sourceKind: colabJson.source_kind,
               cropPreviews: colabJson.crop_previews || {},
               tensorStats: colabJson.tensor_stats || {},
               viewsSample: colabJson.views || {},
@@ -469,7 +471,7 @@ export const triggerColabFrameExtract = createServerFn({ method: "POST" })
             duration: Number(video.duration_sec),
             cookie: activeCookie,
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(30000),
         });
         if (resp.ok) {
           const colabJson = (await resp.json()) as { ok?: boolean; frames?: string[] };
@@ -585,22 +587,24 @@ export const inspectFrameEmbedding = createServerFn({ method: "POST" })
         signal: AbortSignal.timeout(12000),
       });
 
-      if (resp.ok) {
-        const json = (await resp.json()) as any;
-        return {
-          ok: true,
-          imageMd5: json.image_md5 || "md5_verified",
-          imageDims: json.image_dims || { width: 1280, height: 720 },
-          dim: 2048,
-          cropPreviews: json.crop_previews || { global: targetStill || "", person_context: "", person_tight: "", face: "" },
-          tensorStats: json.tensor_stats || {},
-          viewsSample: json.views || {},
-          gpuDevice: json.gpu_device || "Tesla T4 (CUDA)",
-          vramAllocatedGb: json.vram_allocated_gb || 0.45,
-          latencyMs: json.latency_ms || 25,
-          verifiedAt: new Date().toISOString(),
-        };
-      }
+        if (resp.ok) {
+          const json = (await resp.json()) as any;
+          return {
+            ok: true,
+            imageMd5: json.image_md5 || "md5_verified",
+            imageDims: json.image_dims || { width: 1280, height: 720 },
+            dim: 2048,
+            sourceBytes: json.source_bytes,
+            sourceKind: json.source_kind,
+            cropPreviews: json.crop_previews || { global: targetStill || "", person_context: "", person_tight: "", face: "" },
+            tensorStats: json.tensor_stats || {},
+            viewsSample: json.views || {},
+            gpuDevice: json.gpu_device || "Tesla T4 (CUDA)",
+            vramAllocatedGb: json.vram_allocated_gb || 0.45,
+            latencyMs: json.latency_ms || 25,
+            verifiedAt: new Date().toISOString(),
+          };
+        }
       return {
         ok: false,
         imageMd5: "error",
@@ -1156,6 +1160,34 @@ export async function runTickJobsInternal() {
 
     // 若 Colab 在线，在 embed 阶段向 Colab 发起真实 GPU 特征抽取请求
     if (cur.stage === "embed" && row.video_id && colabUrl) {
+      // 查询该视频的 pickcode 与 115 凭证，让 Colab 能自行拉取真实画面
+      let jobPc = "";
+      let jobCookie = getGlobal115Cookie();
+      try {
+        const vRows = await sql<{ pick_code: string; meta: unknown }>`
+          select pick_code, meta from videos where id = ${row.video_id}
+        `;
+        if (vRows[0]) {
+          const vMeta = asJson<{ pickCode?: string }>(vRows[0].meta, {});
+          jobPc = vRows[0].pick_code || vMeta.pickCode || row.video_id.replace("vid_115_", "");
+        }
+        if (!jobCookie) {
+          const sources = await sql<{ config: unknown }>`
+            select config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
+          `;
+          for (const s of sources) {
+            const cfg = asJson<{ cookie?: string }>(s.config, {});
+            if (cfg.cookie) {
+              jobCookie = cfg.cookie;
+              setGlobal115Cookie(cfg.cookie);
+              break;
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       try {
         void fetch(`${colabUrl.replace(/\/$/, "")}/api/v1/ingest/process_video`, {
           method: "POST",
@@ -1164,8 +1196,10 @@ export async function runTickJobsInternal() {
             video_id: row.video_id,
             filename: row.filename,
             duration: 60,
+            pick_code: jobPc,
+            cookie: jobCookie,
           }),
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(20000),
         }).catch(() => {});
       } catch {
         // ignore

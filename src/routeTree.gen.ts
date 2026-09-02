@@ -17,6 +17,7 @@ import { Route as SourcesRouteImport } from './routes/sources'
 import { Route as WorkflowRouteImport } from './routes/workflow'
 import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as LibraryIdRouteImport } from './routes/library.$id'
+import { Route as ApiPan115ImgRouteImport } from './routes/api/pan115/img'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const LibraryIdRoute = LibraryIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => LibraryRoute,
 } as any)
+const ApiPan115ImgRoute = ApiPan115ImgRouteImport.update({
+  id: '/api/pan115/img',
+  path: '/api/pan115/img',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
   '/library/': typeof LibraryIndexRoute
+  '/api/pan115/img': typeof ApiPan115ImgRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
   '/library': typeof LibraryIndexRoute
+  '/api/pan115/img': typeof ApiPan115ImgRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
   '/library/': typeof LibraryIndexRoute
+  '/api/pan115/img': typeof ApiPan115ImgRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/library/$id'
     | '/library/'
+    | '/api/pan115/img'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/library/$id'
     | '/library'
+    | '/api/pan115/img'
   id:
     | '__root__'
     | '/'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/workflow'
     | '/library/$id'
     | '/library/'
+    | '/api/pan115/img'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   PipelineRoute: typeof PipelineRoute
   SourcesRoute: typeof SourcesRoute
   WorkflowRoute: typeof WorkflowRoute
+  ApiPan115ImgRoute: typeof ApiPan115ImgRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -188,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryIdRouteImport
       parentRoute: typeof LibraryRoute
     }
+    '/api/pan115/img': {
+      id: '/api/pan115/img'
+      path: '/api/pan115/img'
+      fullPath: '/api/pan115/img'
+      preLoaderRoute: typeof ApiPan115ImgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -211,6 +231,7 @@ const rootRouteChildren: RootRouteChildren = {
   PipelineRoute: PipelineRoute,
   SourcesRoute: SourcesRoute,
   WorkflowRoute: WorkflowRoute,
+  ApiPan115ImgRoute: ApiPan115ImgRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

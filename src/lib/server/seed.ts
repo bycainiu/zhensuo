@@ -132,6 +132,11 @@ const FALLBACK_STILLS = [
   "/stills/downjacket.jpg",
 ];
 
+// 修复任务的进程内节流：115 拉图失败时避免每个请求都串行重试拖垮列表接口
+const REPAIR_INTERVAL_MS = 120_000;
+let lastRepairAt = 0;
+let repairInFlight = false;
+
 export async function seedIfEmpty() {
   const sql = await getSql();
 
@@ -143,9 +148,15 @@ export async function seedIfEmpty() {
   const videoCount = await sql<{ c: number }>`select count(*)::int as c from videos`;
   if ((videoCount[0]?.c ?? 0) === 0) {
     await seedVideos();
-  } else {
+  } else if (!repairInFlight && Date.now() - lastRepairAt > REPAIR_INTERVAL_MS) {
     // 检查并自动修复数据库中已存在的占位 SVG 图片为真实电影画幅帧
-    await repairSvgPlaceholders();
+    lastRepairAt = Date.now();
+    repairInFlight = true;
+    try {
+      await repairSvgPlaceholders();
+    } finally {
+      repairInFlight = false;
+    }
   }
 }
 

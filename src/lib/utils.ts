@@ -24,6 +24,27 @@ export function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
+/**
+ * 将 115 网盘图片直链包装为本站同源代理地址。
+ * 浏览器直连 115 图床会被 Referer/Cookie 防盗链与无 CORS 头拦截，
+ * 统一经 /api/pan115/img 由本地服务端带凭证抓取；data URI 与本地路径原样返回。
+ */
+export function pan115MediaSrc(src?: string | null): string {
+  if (!src) return "";
+  if (/^https?:\/\//i.test(src)) {
+    let host = "";
+    try {
+      host = new URL(src).hostname;
+    } catch {
+      return src;
+    }
+    if (/115/i.test(host)) {
+      return `/api/pan115/img?url=${encodeURIComponent(src)}`;
+    }
+  }
+  return src;
+}
+
 function stringHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

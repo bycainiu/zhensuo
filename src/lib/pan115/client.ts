@@ -10,6 +10,7 @@
  */
 
 import QRCode from "qrcode";
+import { pan115MediaSrc } from "../utils";
 import type {
   Pan115AppType,
   Pan115QrSession,
@@ -324,9 +325,12 @@ export async function fetch115UserProfile(cookie: string, deviceName = "Apple �
 }
 
 /**
- * 5. 核心：在服务端带 115 Cookie 凭证直接抓取真实图片，并输出为 100% 离线 Base64 JPEG Data URI
+ * 5. 核心：在服务端带 115 Cookie 凭证直接抓取真实图片二进制（供图片代理路由与 Data-URI 转换共用）
  */
-export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: string): Promise<string | null> {
+export async function fetch115ImageBytes(
+  cookie: string,
+  urlOrPickcode: string,
+): Promise<{ bytes: ArrayBuffer; contentType: string } | null> {
   if (!urlOrPickcode) return null;
   const activeCookie = cookie?.trim() || getGlobal115Cookie();
 
@@ -433,8 +437,7 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
 
             if (isJpeg || isPng || isWebp || ct.includes("image")) {
               const mime = isPng ? "image/png" : isWebp ? "image/webp" : "image/jpeg";
-              const b64 = Buffer.from(buf).toString("base64");
-              return `data:${mime};base64,${b64}`;
+              return { bytes: buf, contentType: mime };
             }
           }
         }
@@ -446,6 +449,16 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
   }
 
   return null;
+}
+
+/**
+ * 5.1 核心：在服务端带 115 Cookie 凭证直接抓取真实图片，并输出为 100% 离线 Base64 JPEG Data URI
+ */
+export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: string): Promise<string | null> {
+  const img = await fetch115ImageBytes(cookie, urlOrPickcode);
+  if (!img) return null;
+  const b64 = Buffer.from(img.bytes).toString("base64");
+  return `data:${img.contentType};base64,${b64}`;
 }
 
 /**
@@ -638,10 +651,9 @@ export async function fetchReal115Files(
             path: `/${name}`,
             indexed: false,
             videoId: isDir ? null : `vid_115_${item.pc || item.fid}`,
-            still:
-              item.u ||
-              (item.ico && item.ico.startsWith("http") ? item.ico : null) ||
-              (item.pc ? `https://imgload.115.com/?pickcode=${item.pc}&type=thumb` : null),
+            still: pan115MediaSrc(
+              item.u || (item.ico && item.ico.startsWith("http") ? item.ico : null),
+            ) || (item.pc ? `/api/pan115/img?pc=${encodeURIComponent(item.pc)}` : null),
             updateTime: item.t,
           };
         }).filter((f) => f.isDir || videoExts.some((e) => f.name.toLowerCase().endsWith(e)));

@@ -36,7 +36,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatBytes, formatClock } from "@/lib/utils";
+import { formatBytes, formatClock, pan115MediaSrc } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Pan115AppType, Pan115QrSession, Pan115User, PanFile } from "@/lib/types";
 
@@ -275,8 +275,9 @@ export function SourcesPage() {
         {connectedUser && (
           <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 shadow-soft">
             <img
-              src={connectedUser.avatarUrl}
+              src={pan115MediaSrc(connectedUser.avatarUrl)}
               alt=""
+              referrerPolicy="no-referrer"
               className="h-10 w-10 rounded-full border border-border object-cover"
             />
             <div>
@@ -623,7 +624,7 @@ export function SourcesPage() {
                           <div className="flex min-w-0 flex-1 items-center gap-3">
                             <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded-md border border-border bg-elevated">
                               {item.still ? (
-                                <img src={item.still} alt="" className="h-full w-full object-cover" />
+                                <img src={pan115MediaSrc(item.still)} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.opacity = "0.2"; }} className="h-full w-full object-cover" />
                               ) : (
                                 <div className="flex h-full w-full items-center justify-center">
                                   <Video className="h-5 w-5 text-subtle" />

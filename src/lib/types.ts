@@ -264,6 +264,10 @@ export interface FrameEmbeddingVerification {
   imageMd5: string;
   imageDims: { width: number; height: number };
   dim: number;
+  /** 服务端实际接收到的图像二进制字节数 (用于与本地源图比对，确认嵌入的就是当前帧) */
+  sourceBytes?: number;
+  /** 图像来源解析方式: base64 / url / file / raw_base64 */
+  sourceKind?: string;
   cropPreviews: Record<ViewType, string>;
   tensorStats: Record<ViewType, { l2_norm: number; mean: number; std: number }>;
   viewsSample: Record<ViewType, number[]>;

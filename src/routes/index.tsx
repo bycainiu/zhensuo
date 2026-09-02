@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { exportSearchResults, getOverview, recentSearches, runSearch } from "@/lib/server/fns";
-import { formatClock } from "@/lib/utils";
+import { formatClock, pan115MediaSrc } from "@/lib/utils";
 import type { ExportFormat, SearchHit, SearchTrace, ViewType } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -312,7 +312,7 @@ function SearchPage() {
 
             <div className="p-4">
               <div className="relative aspect-video overflow-hidden rounded-xl border border-border bg-black">
-                <img src={previewHit.still} alt="" className="h-full w-full object-contain" />
+                <img src={pan115MediaSrc(previewHit.still)} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain" />
                 {previewHit.bbox && (
                   <span
                     className="absolute border-2 border-accent shadow-md transition-all"
@@ -425,7 +425,7 @@ function HitCard({ hit, onPreview }: { hit: SearchHit; onPreview: () => void }) 
       <div className="grid gap-0 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.2fr)]">
         {/* 左侧：画面与 BBox */}
         <div className="relative aspect-video overflow-hidden bg-black">
-          <img src={hit.still} alt="" className="h-full w-full object-cover" />
+          <img src={pan115MediaSrc(hit.still)} alt="" referrerPolicy="no-referrer" className="h-full w-full object-cover" />
           {hit.bbox && (
             <span
               className="absolute border border-accent/90"

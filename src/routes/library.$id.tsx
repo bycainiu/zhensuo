@@ -9,7 +9,7 @@ import {
 } from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatClock } from "@/lib/utils";
+import { formatClock, pan115MediaSrc } from "@/lib/utils";
 import type { ViewType, FrameEmbeddingVerification } from "@/lib/types";
 import { getStored115Cookie } from "@/lib/pan115/client";
 import { toast } from "sonner";
@@ -50,6 +50,41 @@ const VIEW_SHORT: Record<ViewType, string> = {
   person_tight: "Tight",
   face: "Face",
 };
+
+/**
+ * 本地源图字节数 ↔ 服务端实际接收字节数比对：
+ * 两者一致即可证明 Colab GPU 嵌入的就是当前帧这张图片 (而非回退图或色彩占位)。
+ */
+function ByteMatchLine({
+  still,
+  inspectData,
+}: {
+  still?: string;
+  inspectData: FrameEmbeddingVerification | null;
+}) {
+  if (!inspectData || !inspectData.ok || inspectData.sourceBytes == null) return null;
+  const serverBytes = inspectData.sourceBytes;
+  let localBytes: number | null = null;
+  if (still && still.startsWith("data:") && still.includes(",")) {
+    const b64 = still.slice(still.indexOf(",") + 1);
+    const pad = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
+    localBytes = Math.floor((b64.length * 3) / 4) - pad;
+  }
+  const matched = localBytes == null ? null : localBytes === serverBytes;
+  return (
+    <p
+      className={`font-mono text-[10px] leading-tight ${
+        matched == null ? "text-subtle" : matched ? "text-emerald-400" : "text-amber-400"
+      }`}
+    >
+      {matched == null
+        ? `${inspectData.sourceKind || "remote"} · ${serverBytes} B (服务端)`
+        : matched
+          ? `✓ 本地 ${localBytes} B = 服务端 ${serverBytes} B，嵌入图一致`
+          : `⚠ 本地 ${localBytes} B ≠ 服务端 ${serverBytes} B，嵌入图不一致`}
+    </p>
+  );
+}
 
 function VideoDetail() {
   const { id } = Route.useParams();
@@ -113,22 +148,26 @@ function VideoDetail() {
   });
 
   const data = q.data;
-  if (q.isLoading) return <p className="text-sm text-muted">读取成片…</p>;
-  if (!data) return <p className="text-sm text-muted">未找到该成片。</p>;
-
-  const { video, frames, regions, description } = data;
-  const focus = frames.find((f) => t != null && Math.abs(f.timestamp - t) < 1.2) ?? frames[0];
+  const focus = data
+    ? (data.frames.find((f) => t != null && Math.abs(f.timestamp - t) < 1.2) ?? data.frames[0])
+    : undefined;
 
   // 当切换选中帧时，自动触发或重置 GPU 嵌入核验
+  // (必须位于所有条件 return 之前，否则 React hooks 调用顺序会被破坏导致整页崩溃)
   useEffect(() => {
     if (focus && focus.still && !focus.still.startsWith("data:image/svg")) {
       inspectMut.mutate({
         frameId: focus.id,
-        videoId: video.id,
+        videoId: data!.video.id,
         stillUrl: focus.still,
       });
     }
   }, [focus?.id, focus?.still]);
+
+  if (q.isLoading) return <p className="text-sm text-muted">读取成片…</p>;
+  if (!data) return <p className="text-sm text-muted">未找到该成片。</p>;
+
+  const { video, frames, regions, description } = data;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -243,10 +282,9 @@ function VideoDetail() {
               </div>
             ) : (
               <img
-                src={focus.still}
+                src={pan115MediaSrc(focus.still)}
                 alt={video.title}
                 referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
                 onError={() => setImgLoadError((prev) => ({ ...prev, [focus.id]: true }))}
                 className="h-full w-full object-contain"
               />
@@ -369,6 +407,7 @@ function VideoDetail() {
             <p className="font-mono text-xs text-fg truncate">
               {inspectData?.imageMd5 || "待核验"}
             </p>
+            <ByteMatchLine still={focus?.still} inspectData={inspectData} />
           </div>
 
           <div className="rounded-xl border border-border bg-elevated/40 p-3 space-y-1">
@@ -417,7 +456,7 @@ function VideoDetail() {
             {(["global", "person_context", "person_tight", "face"] as ViewType[]).map((view) => {
               const previewSrc =
                 inspectData?.cropPreviews?.[view] ||
-                (view === "global" ? focus?.still : focus?.still);
+                pan115MediaSrc(focus?.still);
               const stats = inspectData?.tensorStats?.[view];
 
               return (
@@ -480,10 +519,12 @@ function VideoDetail() {
               >
                 <div className="aspect-video overflow-hidden bg-black flex items-center justify-center">
                   <img
-                    src={f.still}
+                    src={pan115MediaSrc(f.still)}
                     alt=""
                     referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      e.currentTarget.style.opacity = "0.25";
+                    }}
                     className="h-full w-full object-cover"
                   />
                 </div>

@@ -126,24 +126,26 @@ img_transforms = T.Compose([
 # ---------------------------------------------------------
 # 2. 辅助工具：多源图像加载、MD5 校验与真实 4-View 裁剪
 # ---------------------------------------------------------
-def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Image.Image, str, Tuple[int, int]]:
+def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Image.Image, str, Tuple[int, int], str, int]:
     """
     统一解析并加载任意来源的图像：
     1. Base64 Data URI (data:image/...;base64,...)
     2. Raw Base64 字符串
     3. HTTP / HTTPS 直链 (带 115 Cookie 与 Referer)
-    4. 115 pickcode
-    5. 本地文件路径
-    返回: (PIL.Image, image_md5_hash, (width, height))
+    4. 本地文件路径
+    返回: (PIL.Image, image_md5_hash, (width, height), source_kind, byte_len)
+      source_kind ∈ {"base64", "raw_base64", "url", "file"} —— 用于核验服务端实际使用了哪类输入
     """
     raw_source = source.strip()
     img_bytes = None
+    source_kind = "unknown"
 
     # 1. Base64 格式
     if raw_source.startswith("data:image/") or "," in raw_source:
         try:
             b64_part = raw_source.split(",", 1)[1] if "," in raw_source else raw_source
             img_bytes = base64.b64decode(b64_part)
+            source_kind = "base64"
         except Exception:
             pass
 
@@ -152,6 +154,7 @@ def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Imag
         try:
             with open(raw_source, "rb") as f:
                 img_bytes = f.read()
+            source_kind = "file"
         except Exception:
             pass
 
@@ -169,6 +172,7 @@ def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Imag
             r = requests.get(raw_source, headers=headers, timeout=8, allow_redirects=True)
             if r.status_code == 200 and len(r.content) > 100:
                 img_bytes = r.content
+                source_kind = "url"
         except Exception as e:
             print(f"[ModelServer] HTTP 拉取图片异常: {e}")
 
@@ -176,6 +180,7 @@ def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Imag
     if not img_bytes and len(raw_source) > 200 and not raw_source.startswith("http"):
         try:
             img_bytes = base64.b64decode(raw_source)
+            source_kind = "raw_base64"
         except Exception:
             pass
 
@@ -186,7 +191,7 @@ def load_image_from_any(source: str, cookie: Optional[str] = None) -> Tuple[Imag
     img_md5 = hashlib.md5(img_bytes).hexdigest()
     pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     dims = (pil_img.width, pil_img.height)
-    return pil_img, img_md5, dims
+    return pil_img, img_md5, dims, source_kind, len(img_bytes)
 
 def generate_4view_crops(pil_img: Image.Image, custom_bbox: Optional[Dict[str, float]] = None) -> Dict[str, Image.Image]:
     """
@@ -305,7 +310,8 @@ def embed_image(req: EmbedImageRequest):
     """
     t0 = time.time()
     try:
-        pil_img, img_md5, dims = load_image_from_any(req.image, req.cookie)
+        pil_img, img_md5, dims, source_kind, byte_len = load_image_from_any(req.image, req.cookie)
+        print(f"[Embed] kind={source_kind} md5={img_md5} dims={dims[0]}x{dims[1]} bytes={byte_len}")
         crops = generate_4view_crops(pil_img, req.bbox)
         
         target_views = req.views or ["global", "person_context", "person_tight", "face"]
@@ -339,6 +345,8 @@ def embed_image(req: EmbedImageRequest):
             "image_md5": img_md5,
             "image_dims": {"width": dims[0], "height": dims[1]},
             "dim": 2048,
+            "source_kind": source_kind,
+            "source_bytes": byte_len,
             "crop_previews": crop_previews,
             "tensor_stats": tensor_stats,
             "views": {v: vectors[v][:64] for v in vectors}, # 前端展示前 64 维样本
@@ -359,6 +367,9 @@ def extract_video_frames(req: ExtractFramesRequest):
     duration = req.duration or 60.0
     ts_list = req.timestamps or [0.0, round(duration * 0.25, 2), round(duration * 0.5, 2), round(duration * 0.75, 2)]
     frames_b64: List[str] = []
+    frames_md5: List[str] = []
+    frames_sources: List[str] = []
+    seen_md5 = set()
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
@@ -369,6 +380,18 @@ def extract_video_frames(req: ExtractFramesRequest):
         headers["Cookie"] = req.cookie
 
     # 1. 尝试从 115 官方 files/video 和 files/storyboard 获取预渲染画面
+    def accept_frame(img_src: str, tag: str, size=(640, 360)):
+        """解码一帧，按 MD5 去重后加入返回列表，并记录来源便于核验"""
+        pil_img, f_md5, _, _, _ = load_image_from_any(img_src, req.cookie)
+        if f_md5 in seen_md5:
+            return False
+        seen_md5.add(f_md5)
+        frames_b64.append(pil_to_thumb_b64(pil_img, size))
+        frames_md5.append(f_md5)
+        frames_sources.append(tag)
+        print(f"[ExtractFrames] + {tag} md5={f_md5}")
+        return True
+
     if req.pick_code and req.cookie:
         # files/storyboard
         try:
@@ -381,8 +404,7 @@ def extract_video_frames(req: ExtractFramesRequest):
                         img_u = item.get("url")
                         if img_u:
                             try:
-                                pil_img, _, _ = load_image_from_any(img_u, req.cookie)
-                                frames_b64.append(pil_to_thumb_b64(pil_img, (640, 360)))
+                                accept_frame(img_u, "storyboard")
                             except Exception:
                                 pass
         except Exception as e:
@@ -399,8 +421,7 @@ def extract_video_frames(req: ExtractFramesRequest):
                     for k in ["snap_url", "thumb_url", "cover_url"]:
                         if d.get(k):
                             try:
-                                pil_img, _, _ = load_image_from_any(d[k], req.cookie)
-                                frames_b64.append(pil_to_thumb_b64(pil_img, (640, 360)))
+                                accept_frame(d[k], f"files_video:{k}")
                             except Exception:
                                 pass
             except Exception as e:
@@ -410,8 +431,7 @@ def extract_video_frames(req: ExtractFramesRequest):
         if len(frames_b64) == 0:
             try:
                 pick_img_url = f"https://img.115.com/?ct=img&ac=index&pick_code={req.pick_code}"
-                pil_img, _, _ = load_image_from_any(pick_img_url, req.cookie)
-                frames_b64.append(pil_to_thumb_b64(pil_img, (640, 360)))
+                accept_frame(pick_img_url, "pickcode_direct")
             except Exception as e:
                 print(f"[ModelServer] pickcode 直连拉取异常: {e}")
 
@@ -428,7 +448,7 @@ def extract_video_frames(req: ExtractFramesRequest):
                     frame_resized = cv2.resize(frame, (640, 360))
                     _, buf = cv2.imencode(".jpg", frame_resized, [cv2.IMWRITE_JPEG_QUALITY, 85])
                     b64 = base64.b64encode(buf).decode("utf-8")
-                    frames_b64.append(f"data:image/jpeg;base64,{b64}")
+                    accept_frame(f"data:image/jpeg;base64,{b64}", f"stream_decode@{t}")
             cap.release()
         except Exception as e:
             print(f"[ModelServer] OpenCV 抽帧异常: {e}")
@@ -437,6 +457,8 @@ def extract_video_frames(req: ExtractFramesRequest):
         "ok": True,
         "video_id": req.video_id,
         "frames": frames_b64,
+        "frames_md5": frames_md5,
+        "frames_sources": frames_sources,
         "frames_count": len(frames_b64),
         "source": "115_official_api" if req.pick_code else "stream_decode",
         "latency_ms": round((time.time() - t0) * 1000, 2)
@@ -465,6 +487,7 @@ def process_video(req: IngestProcessRequest):
         raw_frames = ext_res.get("frames", [])
 
     results = []
+    real_frames_count = 0
     with torch.no_grad():
         for idx, t in enumerate(timestamps):
             frame_id = f"f_{req.video_id}_{idx+1}"
@@ -473,16 +496,22 @@ def process_video(req: IngestProcessRequest):
             # 使用真实解码图片或加载 fallback
             cur_frame_src = raw_frames[idx % len(raw_frames)] if raw_frames else None
             pil_img = None
+            frame_md5 = ""
             if cur_frame_src:
                 try:
-                    pil_img, _, _ = load_image_from_any(cur_frame_src, req.cookie)
+                    pil_img, frame_md5, _, _, _ = load_image_from_any(cur_frame_src, req.cookie)
                 except Exception:
                     pass
             
-            # 若无真实图片，使用基础色彩图像输入神经网络
+            # 若无真实图片，使用基础色彩图像输入神经网络 (real_frame=False 明确标记，避免静默造假)
+            is_real_frame = pil_img is not None
             if not pil_img:
                 pil_img = Image.new("RGB", (224, 224), color=(30 + idx*10, 40 + idx*8, 60 + idx*12))
+            else:
+                real_frames_count += 1
 
+            frame_res["frame_md5"] = frame_md5
+            frame_res["real_frame"] = is_real_frame
             crops = generate_4view_crops(pil_img)
             for v in views:
                 c_img = crops.get(v, pil_img)
@@ -514,6 +543,8 @@ def process_video(req: IngestProcessRequest):
         "ok": True,
         "video_id": req.video_id,
         "frames_extracted": len(results),
+        "real_frames_count": real_frames_count,
+        "fallback_frames_count": len(results) - real_frames_count,
         "vectors_generated": len(results) * len(views),
         "results": results,
         "device": DEVICE,

@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { listVideos } from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
-import { formatBytes, formatClock } from "@/lib/utils";
+import { formatBytes, formatClock, pan115MediaSrc } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 import { getStored115Cookie } from "@/lib/pan115/client";
@@ -82,10 +82,9 @@ function Grid({ videos }: { videos: Awaited<ReturnType<typeof listVideos>> }) {
           >
             <div className="relative aspect-video overflow-hidden bg-black">
               <img
-                src={v.poster}
+                src={pan115MediaSrc(v.poster)}
                 alt=""
                 referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               />
               <span className="absolute bottom-2 right-2 rounded-md bg-bg/85 px-1.5 py-0.5 font-mono text-[11px] tabular text-fg">
