@@ -211,15 +211,29 @@ export function SourcesPage() {
 
   // 加入抽帧索引流水线
   const ingest = useMutation({
-    mutationFn: (videoId: string) => startIngest({ data: { videoId } }),
+    mutationFn: (item: PanFile) =>
+      startIngest({
+        data: {
+          videoId: item.videoId || `vid_115_${item.pickCode || item.fid}`,
+          title: item.name.replace(/\.[^/.]+$/, ""),
+          filename: item.name,
+          duration: item.duration || 60,
+          sizeMb: item.sizeMb,
+          pickCode: item.pickCode,
+          path: item.path,
+          posterUrl: item.still || "/stills/studio.jpg",
+          sourceId: activeQrSource?.status === "connected" ? "src_115_qr" : "src_115_cookie",
+        },
+      }),
     onSuccess: (res) => {
       if (res.ok) {
         toast.success("素材已成功加入 AI 抽帧索引流水线");
         void qc.invalidateQueries({ queryKey: ["videos"] });
         void qc.invalidateQueries({ queryKey: ["jobs"] });
         void qc.invalidateQueries({ queryKey: ["115"] });
+        void qc.invalidateQueries({ queryKey: ["overview"] });
       } else {
-        toast.error(res.error || "加入流水线失败");
+        toast.error("加入流水线失败，请重试");
       }
     },
   });
@@ -644,7 +658,7 @@ export function SourcesPage() {
                                 size="sm"
                                 variant="secondary"
                                 disabled={ingest.isPending}
-                                onClick={() => item.videoId && ingest.mutate(item.videoId)}
+                                onClick={() => ingest.mutate(item)}
                               >
                                 <Sparkles className="mr-1.5 h-3.5 w-3.5 text-accent" />
                                 加入 AI 索引

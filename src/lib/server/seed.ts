@@ -1,7 +1,4 @@
 import { getSql } from "@/lib/db";
-import { VIDEOS } from "@/lib/catalog";
-import { MODEL_PROFILES } from "@/lib/engine/embed";
-import { buildIndex } from "@/lib/engine/search";
 
 const MODELS = [
   {
@@ -120,57 +117,20 @@ const MODELS = [
 
 export async function seedIfEmpty() {
   const sql = await getSql();
-  const rows = await sql<{ c: number }>`select count(*)::int as c from videos`;
-  if ((rows[0]?.c ?? 0) === 0) {
-    await seedCore();
-  }
-  const regionCount = await sql<{ c: number }>`select count(*)::int as c from regions`;
-  if ((regionCount[0]?.c ?? 0) === 0) {
-    await seedRegions();
-  }
-}
 
-async function seedRegions() {
-  const sql = await getSql();
-  for (const v of VIDEOS) {
-    const existing = await sql<{ id: string }>`select id from frames where video_id = ${v.id} limit 1`;
-    if (existing.length === 0) {
-      for (const f of v.frames) {
-        await sql`
-          insert into frames (id, video_id, timestamp_sec, shot_id, still_url, scene_tags, objects)
-          values (
-            ${f.id}, ${v.id}, ${f.t}, ${f.shot}, ${f.still},
-            ${JSON.stringify(f.scene)}, ${JSON.stringify(f.objects)}
-          )
-        `;
-      }
-    }
-  }
-  const profile = MODEL_PROFILES["qwen3-vl-emb-8b"]!;
-  const index = buildIndex(
-    VIDEOS.map((v) => ({ ...v, indexed: true })),
-    profile,
-  );
-  for (const r of index) {
-    try {
-      await sql`
-        insert into regions (id, frame_id, video_id, view_type, person_index, bbox, attributes, vector)
-        values (
-          ${r.id}, ${r.frameId}, ${r.videoId}, ${r.view}, ${r.personIndex},
-          ${JSON.stringify(r.bbox)},
-          ${JSON.stringify({ concepts: r.concepts })},
-          ${JSON.stringify(r.vector)}
-        )
-      `;
-    } catch (err) {
-      console.error("[seed] region insert failed", r.id, err);
-    }
-  }
-  const counts = await sql<{ video_id: string; c: number }>`
-    select video_id, count(*)::int as c from regions group by video_id
+  // 清理任何遗留的历史模拟视频
+  const legacyMock = await sql<{ id: string }>`
+    select id from videos where id in ('vid_basketball', 'vid_red_dress', 'vid_office', 'vid_jacket_phone', 'vid_rain_run', 'vid_chef', 'vid_doctor', 'vid_forklift', 'vid_studio', 'vid_downjacket')
   `;
-  for (const row of counts) {
-    await sql`update videos set vector_count = ${row.c} where id = ${row.video_id}`;
+  if (legacyMock.length > 0) {
+    await sql`
+      delete from videos where id in ('vid_basketball', 'vid_red_dress', 'vid_office', 'vid_jacket_phone', 'vid_rain_run', 'vid_chef', 'vid_doctor', 'vid_forklift', 'vid_studio', 'vid_downjacket')
+    `;
+  }
+
+  const modelCount = await sql<{ c: number }>`select count(*)::int as c from models`;
+  if ((modelCount[0]?.c ?? 0) === 0) {
+    await seedCore();
   }
 }
 
@@ -184,6 +144,7 @@ async function seedCore() {
       ('src_115_cookie', '115_cookie', '115 Cookie 直连', 'disconnected', '{}'::jsonb),
       ('src_115_open', '115_open', '115 开放平台 (OAuth)', 'disconnected', '{}'::jsonb),
       ('src_upload', 'upload', '本地素材导入', 'disconnected', '{}'::jsonb)
+    on conflict (id) do nothing
   `;
 
   for (const m of MODELS) {
@@ -194,6 +155,7 @@ async function seedCore() {
         ${JSON.stringify(m.languages)}::jsonb, ${m.vram}, ${m.notes}, ${m.active},
         ${m.chinese}, ${m.action}, ${m.expression}, ${m.clothing}, ${m.compound}
       )
+      on conflict (id) do nothing
     `;
   }
 
@@ -204,6 +166,7 @@ async function seedCore() {
       ('app_rag', 'Video RAG 多模态知识库片段投递', 'rag', true, ${JSON.stringify({ channel: "default", topK: 5 })}::jsonb),
       ('app_nle', '剪辑工程导出 (Final Cut Pro / Premiere)', 'export', true, ${JSON.stringify({ formats: ["fcpxml", "edl", "json"] })}::jsonb),
       ('app_hook', 'Webhook 自动化触发器', 'webhook', false, ${JSON.stringify({ url: "" })}::jsonb)
+    on conflict (id) do nothing
   `;
 
   await sql`
@@ -211,56 +174,8 @@ async function seedCore() {
       ('embed_model', ${JSON.stringify("qwen3-vl-emb-8b")}::jsonb),
       ('rerank_model', ${JSON.stringify("qwen3-vl-rerank-8b")}::jsonb),
       ('sample_fps', ${JSON.stringify(1)}::jsonb),
-      ('embed_dim', ${JSON.stringify(2048)}::jsonb)
+      ('embed_dim', ${JSON.stringify(2048)}::jsonb),
+      ('colab_url', ${JSON.stringify("http://100.92.54.15:8000")}::jsonb)
+    on conflict (key) do nothing
   `;
-
-  const profile = MODEL_PROFILES["qwen3-vl-emb-8b"]!;
-  const index = buildIndex(
-    VIDEOS.map((v) => ({ ...v, indexed: true })),
-    profile,
-  );
-
-  for (const v of VIDEOS) {
-    const regions = index.filter((r) => r.videoId === v.id);
-    await sql`
-      insert into videos (
-        id, source_id, title, filename, duration_sec, width, height,
-        poster_url, status, path, pick_code, size_mb, frame_count, vector_count, indexed_at, meta
-      ) values (
-        ${v.id}, 'src_115_demo', ${v.title}, ${v.filename}, ${v.duration}, ${v.w}, ${v.h},
-        ${v.poster}, ${v.indexed ? "ready" : "pending"}, ${v.path}, ${v.pickCode}, ${v.sizeMb},
-        ${v.frames.length}, ${v.indexed ? regions.length : 0},
-        ${v.indexed ? new Date().toISOString() : null},
-        ${JSON.stringify({ description: v.description })}::jsonb
-      )
-    `;
-    if (!v.indexed) continue;
-    for (const f of v.frames) {
-      await sql`
-        insert into frames (id, video_id, timestamp_sec, shot_id, still_url, scene_tags, objects)
-        values (
-          ${f.id}, ${v.id}, ${f.t}, ${f.shot}, ${f.still},
-          ${JSON.stringify(f.scene)}::jsonb, ${JSON.stringify(f.objects)}::jsonb
-        )
-      `;
-    }
-  }
-
-  for (const r of index) {
-    const video = VIDEOS.find((v) => v.id === r.videoId);
-    if (!video?.indexed) continue;
-    try {
-      await sql`
-        insert into regions (id, frame_id, video_id, view_type, person_index, bbox, attributes, vector)
-        values (
-          ${r.id}, ${r.frameId}, ${r.videoId}, ${r.view}, ${r.personIndex},
-          ${JSON.stringify(r.bbox)},
-          ${JSON.stringify({ concepts: r.concepts })},
-          ${JSON.stringify(r.vector)}
-        )
-      `;
-    } catch (err) {
-      console.error("[seed] region insert failed", r.id, err);
-    }
-  }
 }
