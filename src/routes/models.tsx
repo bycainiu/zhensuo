@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Check,
   CheckCircle2,
@@ -16,24 +16,45 @@ import {
   RefreshCw,
   Sparkles,
   Zap,
+  Fingerprint,
+  Activity,
+  Upload,
+  Eye,
+  ShieldCheck,
+  Maximize2,
 } from "lucide-react";
 import {
   activateModel,
   getColabSettings,
   listModels,
   probeColabNode,
+  inspectFrameEmbedding,
 } from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QUERY_INSTRUCTION } from "@/lib/engine/embed";
 import { toast } from "sonner";
+import type { FrameEmbeddingVerification, ViewType } from "@/lib/types";
+import { getStored115Cookie } from "@/lib/pan115/client";
 
 export const Route = createFileRoute("/models")({ component: ModelsPage });
+
+const VIEW_SHORT: Record<ViewType, string> = {
+  global: "Global (场景全幅)",
+  person_context: "Context (动作上下文)",
+  person_tight: "Tight (主体穿搭)",
+  face: "Face (神态特写)",
+};
 
 function ModelsPage() {
   const qc = useQueryClient();
   const [colabUrl, setColabUrl] = useState("http://100.92.54.15:8000");
+  const testFileInputRef = useRef<HTMLInputElement>(null);
+
+  // 诊断沙箱状态
+  const [testImage, setTestImage] = useState<string>("/stills/jacket-phone.jpg");
+  const [testResult, setTestResult] = useState<FrameEmbeddingVerification | null>(null);
 
   // 初始化从 localStorage 加载保存的 URL
   useEffect(() => {
@@ -83,6 +104,30 @@ function ModelsPage() {
     },
   });
 
+  // 实时测试 GPU 图像嵌入
+  const testEmbedMut = useMutation({
+    mutationFn: (imgSrc: string) =>
+      inspectFrameEmbedding({
+        data: {
+          videoId: "test_sandbox",
+          frameId: "f_test",
+          stillUrl: imgSrc,
+          cookie: getStored115Cookie(),
+        },
+      }),
+    onSuccess: (res) => {
+      setTestResult(res);
+      if (res.ok) {
+        toast.success(`🎉 GPU 嵌入推理成功！耗时 ${res.latencyMs} ms`);
+      } else {
+        toast.error(res.error || "嵌入测试失败");
+      }
+    },
+    onError: (err) => {
+      toast.error(`测试异常: ${err instanceof Error ? err.message : "超时"}`);
+    },
+  });
+
   const embed = (q.data ?? []).filter((m) => m.role === "embedding");
   const rerank = (q.data ?? []).filter((m) => m.role === "reranker");
 
@@ -99,6 +144,19 @@ function ModelsPage() {
     probeMutation.mutate(colabUrl.trim());
   }
 
+  const handleTestFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setTestImage(reader.result);
+        testEmbedMut.mutate(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-10">
       {/* 头部 */}
@@ -113,7 +171,7 @@ function ModelsPage() {
         </p>
       </header>
 
-      {/* Google Colab GPU 节点与 Google Drive 存储关联卡片 (持久化与实时检测) */}
+      {/* Google Colab GPU 节点与 Google Drive 存储关联卡片 */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
           <div className="flex items-center gap-2">
@@ -185,6 +243,118 @@ function ModelsPage() {
             <p className="text-[11px] text-subtle">
               关键帧采样图片、Qdrant 向量索引持久化快照与 FCPXML/EDL 工程均保存在该路径。
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 🚀 多模态图像嵌入可视化诊断与核验沙箱 (核心新增) */}
+      <section className="rounded-2xl border border-border bg-surface p-6 shadow-soft space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-accent" />
+            <div>
+              <h2 className="text-sm font-medium">Colab GPU 多模态图像嵌入可视化诊断与核验沙箱</h2>
+              <p className="text-xs text-muted">
+                在线验证 GPU 神经网络对任意图像的 4-View 切片提取、MD5 校验与 2048 维向量生成
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              ref={testFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleTestFileUpload}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => testFileInputRef.current?.click()}
+              className="text-xs"
+            >
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+              上传测试图片
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={testEmbedMut.isPending || !isConnected}
+              onClick={() => testEmbedMut.mutate(testImage)}
+              className="text-xs"
+            >
+              {testEmbedMut.isPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Cpu className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {testEmbedMut.isPending ? "GPU 推理中…" : "立即在 GPU 执行 4-View 嵌入"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* 测试原图展示 */}
+          <div className="space-y-3 rounded-xl border border-border bg-elevated/30 p-4 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-medium text-fg flex items-center gap-1.5">
+                <Eye className="h-3.5 w-3.5 text-accent" /> 测试输入画面
+              </span>
+              <div className="mt-3 relative aspect-video rounded-lg overflow-hidden bg-black flex items-center justify-center border border-border">
+                <img src={testImage} alt="测试图" className="h-full w-full object-cover" />
+              </div>
+            </div>
+            <div className="pt-2 text-[11px] text-subtle flex items-center justify-between">
+              <span>{testResult ? `MD5: ${testResult.imageMd5.slice(0, 10)}...` : "点击执行嵌入以核验"}</span>
+              {testResult?.ok && <span className="text-emerald-400 font-mono">✅ 神经网络已核验</span>}
+            </div>
+          </div>
+
+          {/* GPU 4-View 切片与张量统计 */}
+          <div className="md:col-span-2 space-y-3 rounded-xl border border-border bg-elevated/30 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-fg flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-accent" /> GPU 神经网络实际接收的 4 视图裁剪切片
+              </span>
+              <span className="text-[10px] font-mono text-muted">
+                {testResult ? `${testResult.gpuDevice} (${testResult.latencyMs} ms)` : "等待测试"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 pt-1">
+              {(["global", "person_context", "person_tight", "face"] as ViewType[]).map((v) => {
+                const preview = testResult?.cropPreviews?.[v];
+                const stats = testResult?.tensorStats?.[v];
+                return (
+                  <div key={v} className="rounded-lg border border-border/80 bg-surface/60 p-2 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] font-medium text-fg">{v}</span>
+                      <span className="text-[9px] text-emerald-400 font-mono">
+                        {stats ? `L2:${stats.l2_norm.toFixed(2)}` : "2048-d"}
+                      </span>
+                    </div>
+                    <div className="relative aspect-video rounded overflow-hidden bg-black flex items-center justify-center border border-border/50">
+                      {preview ? (
+                        <img src={preview} alt={v} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-[9px] text-subtle">点击测试生成</span>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-subtle truncate">{VIEW_SHORT[v]}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {testResult?.ok && (
+              <div className="mt-2 rounded-lg bg-emerald-950/30 border border-emerald-500/20 p-2.5 text-[11px] text-emerald-300 flex items-center justify-between">
+                <span>
+                  🔥 显存已分配: {testResult.vramAllocatedGb} GB · 图像分辨率: {testResult.imageDims.width}x{testResult.imageDims.height} px
+                </span>
+                <span className="font-mono text-[10px]">向量样本已就绪</span>
+              </div>
+            )}
           </div>
         </div>
       </section>

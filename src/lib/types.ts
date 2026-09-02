@@ -258,3 +258,19 @@ export interface ApiPlaygroundResponse {
   headers: Record<string, string>;
   data: any;
 }
+
+export interface FrameEmbeddingVerification {
+  ok: boolean;
+  imageMd5: string;
+  imageDims: { width: number; height: number };
+  dim: number;
+  cropPreviews: Record<ViewType, string>;
+  tensorStats: Record<ViewType, { l2_norm: number; mean: number; std: number }>;
+  viewsSample: Record<ViewType, number[]>;
+  gpuDevice: string;
+  vramAllocatedGb: number;
+  latencyMs: number;
+  verifiedAt: string;
+  error?: string;
+}
+
