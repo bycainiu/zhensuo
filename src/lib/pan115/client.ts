@@ -487,16 +487,20 @@ export async function fetch115VideoRealFrames(
         };
       };
 
-      console.log(`[115 Frame Fetcher] files/video 响应状态 state: ${json.state}, error: ${json.error || json.msg || "none"}`);
+      console.log(`[115 Frame Fetcher] files/video 原始返回数据: ${JSON.stringify(json)}`);
       if (json.data) {
-        console.log(`[115 Frame Fetcher] files/video 详情字段: thumb_url=${json.data.thumb_url}, snap_url=${json.data.snap_url}, cover_url=${json.data.cover_url}`);
-        const targetThumb = json.data.thumb_url || json.data.snap_url || json.data.cover_url;
-        if (targetThumb) {
-          const uri = await fetch115ImageAsDataUri(activeCookie, targetThumb);
-          if (uri) {
-            console.log(`[115 Frame Fetcher] ✅ 成功从 files/video 提取封面 Data-URI! 字节数: ${uri.length}`);
-            posterBase64 = uri;
-            framesBase64.push(uri);
+        const d = json.data as Record<string, unknown>;
+        // 提取一切可能是图片的字段
+        const candidateKeys = ["thumb_url", "snap_url", "cover_url", "thumb", "snap", "cover", "origin_url", "url", "video_url"];
+        for (const k of candidateKeys) {
+          if (typeof d[k] === "string" && d[k]) {
+            console.log(`[115 Frame Fetcher] 尝试提取字段 ${k}: ${d[k]}`);
+            const uri = await fetch115ImageAsDataUri(activeCookie, d[k] as string);
+            if (uri) {
+              console.log(`[115 Frame Fetcher] ✅ 成功从 ${k} 提取封面 Data-URI! 字节数: ${uri.length}`);
+              if (!posterBase64) posterBase64 = uri;
+              if (!framesBase64.includes(uri)) framesBase64.push(uri);
+            }
           }
         }
       }
