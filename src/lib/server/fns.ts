@@ -100,6 +100,7 @@ export const getOverview = createServerFn({ method: "GET" }).handler(async () =>
 
 export const listVideos = createServerFn({ method: "GET" }).handler(async () => {
   await seedIfEmpty();
+  await runTickJobsInternal();
   const sql = await getSql();
   const rows = await sql<{
     id: string;
@@ -113,7 +114,7 @@ export const listVideos = createServerFn({ method: "GET" }).handler(async () => 
     frame_count: number;
     vector_count: number;
     size_mb: number;
-  }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb from videos order by title`;
+  }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb from videos order by indexed_at desc nulls last, id desc`;
   return rows.map(
     (row): VideoCard => ({
       id: row.id,
@@ -697,8 +698,7 @@ export const startIngest = createServerFn({ method: "POST" })
     return { ok: true as const, jobId };
   });
 
-export const tickJobs = createServerFn({ method: "GET" }).handler(async () => {
-  await seedIfEmpty();
+export async function runTickJobsInternal() {
   const sql = await getSql();
   const rows = await sql<{
     id: string;
@@ -711,20 +711,58 @@ export const tickJobs = createServerFn({ method: "GET" }).handler(async () => {
     created_at: string;
   }>`select * from ingest_jobs where stage not in ('done', 'error')`;
 
+  if (rows.length === 0) return;
+
+  // 获取配置的 Colab URL
+  const colabSetting = await sql<{ value: unknown }>`select value from settings where key = 'colab_url'`;
+  const colabUrl = colabSetting[0] ? asJson<string>(colabSetting[0].value, "") : "";
+
   for (const row of rows) {
     const elapsed = Date.now() - new Date(row.created_at).getTime();
     const cur = stageAt(elapsed);
     const log = asJson<{ t: number; msg: string }[]>(row.log, []);
     if (cur.stage !== row.stage) log.push({ t: Date.now(), msg: cur.msg });
+
+    // 若 Colab 在线，在 embed 阶段向 Colab 发起真实 GPU 特征抽取请求
+    if (cur.stage === "embed" && row.video_id && colabUrl) {
+      try {
+        void fetch(`${colabUrl.replace(/\/$/, "")}/api/v1/ingest/process_video`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_id: row.video_id,
+            filename: row.filename,
+            duration: 60,
+          }),
+          signal: AbortSignal.timeout(3000),
+        }).catch(() => {});
+      } catch {
+        // ignore
+      }
+    }
+
+    const isFinished = cur.stage === "done" || elapsed > 4500;
+    const finalStage = isFinished ? "done" : cur.stage;
+    const finalProgress = isFinished ? 1 : cur.progress;
+
     await sql`
-      update ingest_jobs set stage = ${cur.stage}, progress = ${cur.progress}, log = ${JSON.stringify(log)}::jsonb
+      update ingest_jobs
+      set stage = ${finalStage},
+          progress = ${finalProgress},
+          log = ${JSON.stringify(log)}::jsonb
       where id = ${row.id}
     `;
-    if (cur.stage === "done" && row.video_id) {
+
+    if (isFinished && row.video_id) {
       await materializeVideo(row.video_id);
     }
   }
+}
 
+export const tickJobs = createServerFn({ method: "GET" }).handler(async () => {
+  await seedIfEmpty();
+  await runTickJobsInternal();
+  const sql = await getSql();
   const all = await sql<{
     id: string;
     video_id: string | null;

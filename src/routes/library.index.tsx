@@ -4,11 +4,23 @@ import { useQuery } from "@tanstack/react-query";
 import { listVideos } from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
 import { formatBytes, formatClock } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/library/")({ component: LibraryPage });
 
 function LibraryPage() {
-  const q = useQuery({ queryKey: ["videos"], queryFn: () => listVideos() });
+  const q = useQuery({
+    queryKey: ["videos"],
+    queryFn: () => listVideos(),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data && data.some((v) => v.status !== "ready")) {
+        return 1000;
+      }
+      return false;
+    },
+  });
+
   const videos = q.data ?? [];
   const ready = videos.filter((v) => v.status === "ready");
   const pending = videos.filter((v) => v.status !== "ready");
@@ -79,7 +91,16 @@ function Grid({ videos }: { videos: Awaited<ReturnType<typeof listVideos>> }) {
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-sm font-medium text-fg">{v.title}</h3>
                 <Badge tone={v.status === "ready" ? "ok" : v.status === "indexing" ? "warn" : "muted"}>
-                  {v.status === "ready" ? "已就绪" : v.status === "indexing" ? "抽取中" : "待接入"}
+                  {v.status === "ready" ? (
+                    "已就绪"
+                  ) : v.status === "indexing" ? (
+                    <span className="flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      抽取中
+                    </span>
+                  ) : (
+                    "待接入"
+                  )}
                 </Badge>
               </div>
               <p className="truncate font-mono text-[11px] text-subtle">{v.filename}</p>
