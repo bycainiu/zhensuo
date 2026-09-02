@@ -1,6 +1,8 @@
 import { getSql } from "@/lib/db";
 import { generateCinemaFrameDataUrl } from "@/lib/utils";
 import { fetch115VideoRealFrames } from "@/lib/pan115/client";
+import { VIDEOS } from "@/lib/catalog";
+import type { ViewType } from "@/lib/types";
 
 const MODELS = [
   {
@@ -117,10 +119,41 @@ const MODELS = [
   },
 ];
 
+const FALLBACK_STILLS = [
+  "/stills/jacket-phone.jpg",
+  "/stills/rain-run.jpg",
+  "/stills/basketball.jpg",
+  "/stills/chef.jpg",
+  "/stills/doctor.jpg",
+  "/stills/forklift.jpg",
+  "/stills/red-dress.jpg",
+  "/stills/office.jpg",
+  "/stills/studio.jpg",
+  "/stills/downjacket.jpg",
+];
+
 export async function seedIfEmpty() {
   const sql = await getSql();
 
-  // 获取已连接的 115 Cookie 凭证
+  const modelCount = await sql<{ c: number }>`select count(*)::int as c from models`;
+  if ((modelCount[0]?.c ?? 0) === 0) {
+    await seedCore();
+  }
+
+  const videoCount = await sql<{ c: number }>`select count(*)::int as c from videos`;
+  if ((videoCount[0]?.c ?? 0) === 0) {
+    await seedVideos();
+  } else {
+    // 检查并自动修复数据库中已存在的占位 SVG 图片为真实电影画幅帧
+    await repairSvgPlaceholders();
+  }
+}
+
+async function repairSvgPlaceholders() {
+  const sql = await getSql();
+  const catalogMap = new Map(VIDEOS.map((v) => [v.id, v]));
+
+  // 查询 115 凭证
   const sources = await sql<{ config: unknown }>`
     select config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
   `;
@@ -133,34 +166,106 @@ export async function seedIfEmpty() {
     }
   }
 
-  // 自动拉取真实 115 视频画面帧并更新到数据库
-  const allVideos = await sql<{ id: string; title: string; pick_code: string; meta: unknown }>`
-    select id, title, pick_code, meta from videos
+  const allVideos = await sql<{ id: string; title: string; poster_url: string; pick_code: string; meta: unknown }>`
+    select id, title, poster_url, pick_code, meta from videos
   `;
-  for (const sv of allVideos) {
+
+  for (let i = 0; i < allVideos.length; i++) {
+    const sv = allVideos[i]!;
+    const cat = catalogMap.get(sv.id);
     const meta = sv.meta as { pickCode?: string } | null;
     const pc = sv.pick_code || meta?.pickCode || sv.id.replace("vid_115_", "");
-    
-    // 优先从 115 官方拉取真实 Base64 画面帧
-    const real115 = await fetch115VideoRealFrames(cookie, pc);
-    const posterUrl = real115.poster || generateCinemaFrameDataUrl(sv.title, pc, 0);
 
-    await sql`update videos set poster_url = ${posterUrl}, pick_code = ${pc} where id = ${sv.id}`;
-    
-    // 更新该视频的所有抽帧图像为真实网盘帧
-    const frames = await sql<{ id: string; timestamp_sec: number }>`
-      select id, timestamp_sec from frames where video_id = ${sv.id} order by timestamp_sec asc
+    let newPoster = sv.poster_url;
+
+    // 若当前海报为 SVG 占位图
+    if (!newPoster || newPoster.startsWith("data:image/svg")) {
+      if (cat?.poster) {
+        newPoster = cat.poster;
+      } else if (cookie && pc) {
+        try {
+          const real115 = await fetch115VideoRealFrames(cookie, pc);
+          if (real115.poster) newPoster = real115.poster;
+        } catch {}
+      }
+
+      if (!newPoster || newPoster.startsWith("data:image/svg")) {
+        newPoster = FALLBACK_STILLS[i % FALLBACK_STILLS.length]!;
+      }
+
+      await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
+    }
+
+    // 修复采样帧
+    const frames = await sql<{ id: string; still_url: string; timestamp_sec: number }>`
+      select id, still_url, timestamp_sec from frames where video_id = ${sv.id} order by timestamp_sec asc
     `;
-    for (let idx = 0; idx < frames.length; idx++) {
-      const f = frames[idx]!;
-      const frameStill = real115.frames[idx] || real115.poster || generateCinemaFrameDataUrl(sv.title, pc, Number(f.timestamp_sec));
-      await sql`update frames set still_url = ${frameStill} where id = ${f.id}`;
+
+    for (let fIdx = 0; fIdx < frames.length; fIdx++) {
+      const f = frames[fIdx]!;
+      if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
+        const catFrame = cat?.frames[fIdx];
+        const newStill = catFrame?.still || newPoster;
+        await sql`update frames set still_url = ${newStill} where id = ${f.id}`;
+      }
     }
   }
+}
 
-  const modelCount = await sql<{ c: number }>`select count(*)::int as c from models`;
-  if ((modelCount[0]?.c ?? 0) === 0) {
-    await seedCore();
+async function seedVideos() {
+  const sql = await getSql();
+
+  for (const v of VIDEOS) {
+    await sql`
+      insert into videos (
+        id, source_id, title, filename, duration_sec, width, height,
+        poster_url, status, path, pick_code, size_mb, frame_count, vector_count, meta
+      ) values (
+        ${v.id}, 'src_115_qr', ${v.title}, ${v.filename}, ${v.duration}, ${v.w}, ${v.h},
+        ${v.poster}, 'ready', ${v.path}, ${v.pickCode}, ${v.sizeMb},
+        ${v.frames.length}, ${v.frames.length * 4},
+        ${JSON.stringify({ pickCode: v.pickCode, filename: v.filename, description: v.description })}::jsonb
+      )
+      on conflict (id) do nothing
+    `;
+
+    for (const f of v.frames) {
+      await sql`
+        insert into frames (id, video_id, timestamp_sec, shot_id, still_url, scene_tags, objects)
+        values (
+          ${f.id}, ${v.id}, ${f.t}, ${f.shot}, ${f.still},
+          ${JSON.stringify(f.scene)}::jsonb,
+          ${JSON.stringify(f.objects)}::jsonb
+        )
+        on conflict (id) do nothing
+      `;
+
+      const views: ViewType[] = ["global", "person_context", "person_tight", "face"];
+      for (const view of views) {
+        const regId = `reg_${f.id}_${view}`;
+        const p0 = f.persons[0];
+        const bbox =
+          view === "global"
+            ? null
+            : view === "person_context"
+              ? { x: 0.15, y: 0.08, w: 0.7, h: 0.85 }
+              : view === "person_tight"
+                ? (p0?.bbox ?? { x: 0.25, y: 0.15, w: 0.5, h: 0.7 })
+                : (p0?.faceBbox ?? { x: 0.35, y: 0.12, w: 0.25, h: 0.25 });
+
+        const vec = new Array(2048).fill(0).map(() => Math.round((Math.random() * 0.2 - 0.1) * 10000) / 10000);
+        await sql`
+          insert into regions (id, frame_id, video_id, view_type, person_index, bbox, attributes, vector)
+          values (
+            ${regId}, ${f.id}, ${v.id}, ${view}, 0,
+            ${JSON.stringify(bbox)}::jsonb,
+            ${JSON.stringify({ title: v.title, filename: v.filename, view, concepts: p0?.concepts ?? [] })}::jsonb,
+            ${JSON.stringify(vec)}::jsonb
+          )
+          on conflict (id) do nothing
+        `;
+      }
+    }
   }
 }
 

@@ -144,22 +144,42 @@ export const listVideos = createServerFn({ method: "GET" })
       meta: unknown;
     }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb, pick_code, meta from videos order by indexed_at desc nulls last, id desc`;
 
+    const FALLBACKS = [
+      "/stills/jacket-phone.jpg",
+      "/stills/rain-run.jpg",
+      "/stills/basketball.jpg",
+      "/stills/chef.jpg",
+      "/stills/doctor.jpg",
+      "/stills/forklift.jpg",
+      "/stills/red-dress.jpg",
+      "/stills/office.jpg",
+      "/stills/studio.jpg",
+    ];
+
     return Promise.all(
-      rows.map(async (row): Promise<VideoCard> => {
+      rows.map(async (row, idx): Promise<VideoCard> => {
         let poster = row.poster_url;
         const meta = asJson<{ pickCode?: string }>(row.meta, {});
         const pc = row.pick_code || meta.pickCode || row.id.replace("vid_115_", "");
 
-        // 若当前海报非真实 JPEG (例如仍为旧 SVG 占位图)，且有 pickcode 与 cookie，尝试拉取真实封面
-        if (poster.startsWith("data:image/svg") && pc && activeCookie) {
-          try {
-            const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
-            if (realImg) {
-              poster = realImg;
-              await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
-            }
-          } catch {
-            // ignore
+        // 若当前海报非真实图片 (例如旧 SVG 占位图)，尝试拉取真实封面或使用片库原画
+        if (!poster || poster.startsWith("data:image/svg")) {
+          const cat = VIDEOS.find((v) => v.id === row.id);
+          if (cat?.poster) {
+            poster = cat.poster;
+            await sql`update videos set poster_url = ${poster} where id = ${row.id}`;
+          } else if (pc && activeCookie) {
+            try {
+              const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
+              if (realImg) {
+                poster = realImg;
+                await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
+              }
+            } catch {}
+          }
+          if (!poster || poster.startsWith("data:image/svg")) {
+            poster = FALLBACKS[idx % FALLBACKS.length]!;
+            await sql`update videos set poster_url = ${poster} where id = ${row.id}`;
           }
         }
 
@@ -223,6 +243,7 @@ export const getVideo = createServerFn({ method: "POST" })
 
     const meta = asJson<{ pickCode?: string }>(video.meta, {});
     const pc = video.pick_code || meta.pickCode || video.id.replace("vid_115_", "");
+    const cat = VIDEOS.find((v) => v.id === video.id);
 
     let poster = video.poster_url;
     let realFramesList: string[] = [];
@@ -243,6 +264,11 @@ export const getVideo = createServerFn({ method: "POST" })
       }
     }
 
+    if (!poster || poster.startsWith("data:image/svg")) {
+      poster = cat?.poster || "/stills/jacket-phone.jpg";
+      await sql`update videos set poster_url = ${poster} where id = ${video.id}`;
+    }
+
     const frames = await sql<{
       id: string;
       video_id: string;
@@ -257,13 +283,13 @@ export const getVideo = createServerFn({ method: "POST" })
       if (realFramesList[idx]) {
         f.still_url = realFramesList[idx]!;
         await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
-      } else if (poster && (poster.startsWith("data:image/") || poster.startsWith("http"))) {
-        if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
-          f.still_url = poster;
-          await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
-        }
+      } else if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
+        const catStill = cat?.frames[idx]?.still || poster;
+        f.still_url = catStill;
+        await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
       }
     }
+
 
     const regions = await sql<{
       id: string;
