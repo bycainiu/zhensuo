@@ -15,6 +15,7 @@ import { Route as ModelsRouteImport } from './routes/models'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as SourcesRouteImport } from './routes/sources'
 import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as LibraryIdRouteImport } from './routes/library.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const WorkflowRoute = WorkflowRouteImport.update({
   path: '/workflow',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibraryIndexRoute = LibraryIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LibraryRoute,
+} as any)
 const LibraryIdRoute = LibraryIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -61,15 +67,16 @@ export interface FileRoutesByFullPath {
   '/sources': typeof SourcesRoute
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
+  '/library/': typeof LibraryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/library': typeof LibraryRouteWithChildren
   '/models': typeof ModelsRoute
   '/pipeline': typeof PipelineRoute
   '/sources': typeof SourcesRoute
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
+  '/library': typeof LibraryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +87,7 @@ export interface FileRoutesById {
   '/sources': typeof SourcesRoute
   '/workflow': typeof WorkflowRoute
   '/library/$id': typeof LibraryIdRoute
+  '/library/': typeof LibraryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,15 +99,16 @@ export interface FileRouteTypes {
     | '/sources'
     | '/workflow'
     | '/library/$id'
+    | '/library/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/library'
     | '/models'
     | '/pipeline'
     | '/sources'
     | '/workflow'
     | '/library/$id'
+    | '/library'
   id:
     | '__root__'
     | '/'
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/sources'
     | '/workflow'
     | '/library/$id'
+    | '/library/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/library/': {
+      id: '/library/'
+      path: '/'
+      fullPath: '/library/'
+      preLoaderRoute: typeof LibraryIndexRouteImport
+      parentRoute: typeof LibraryRoute
+    }
     '/library/$id': {
       id: '/library/$id'
       path: '/$id'
@@ -176,10 +193,12 @@ declare module '@tanstack/react-router' {
 
 interface LibraryRouteChildren {
   LibraryIdRoute: typeof LibraryIdRoute
+  LibraryIndexRoute: typeof LibraryIndexRoute
 }
 
 const LibraryRouteChildren: LibraryRouteChildren = {
   LibraryIdRoute: LibraryIdRoute,
+  LibraryIndexRoute: LibraryIndexRoute,
 }
 
 const LibraryRouteWithChildren =
