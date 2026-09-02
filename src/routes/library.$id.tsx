@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatClock } from "@/lib/utils";
 import type { ViewType } from "@/lib/types";
 
+import { getStored115Cookie } from "@/lib/pan115/client";
+
 type Search = { t?: number };
 
 export const Route = createFileRoute("/library/$id")({
@@ -24,7 +26,10 @@ const VIEW_LABEL: Record<ViewType, string> = {
 function VideoDetail() {
   const { id } = Route.useParams();
   const { t } = Route.useSearch();
-  const q = useQuery({ queryKey: ["video", id], queryFn: () => getVideo({ data: { id } }) });
+  const q = useQuery({
+    queryKey: ["video", id],
+    queryFn: () => getVideo({ data: { id, cookie: getStored115Cookie() } }),
+  });
   const data = q.data;
   if (q.isLoading) return <p className="text-sm text-muted">读取成片…</p>;
   if (!data) return <p className="text-sm text-muted">未找到该成片。</p>;

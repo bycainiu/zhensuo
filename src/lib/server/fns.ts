@@ -12,6 +12,9 @@ import {
   probeOpenApi,
   fetchReal115Files,
   fetch115VideoRealFrames,
+  fetch115ImageAsDataUri,
+  getGlobal115Cookie,
+  setGlobal115Cookie,
 } from "@/lib/pan115/client";
 import type {
   ApiPlaygroundRequest,
@@ -100,45 +103,105 @@ export const getOverview = createServerFn({ method: "GET" }).handler(async () =>
   return stats;
 });
 
-export const listVideos = createServerFn({ method: "GET" }).handler(async () => {
-  await seedIfEmpty();
-  await runTickJobsInternal();
-  const sql = await getSql();
-  const rows = await sql<{
-    id: string;
-    title: string;
-    filename: string;
-    duration_sec: number;
-    poster_url: string;
-    status: VideoCard["status"];
-    path: string;
-    source_id: string;
-    frame_count: number;
-    vector_count: number;
-    size_mb: number;
-  }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb from videos order by indexed_at desc nulls last, id desc`;
-  return rows.map(
-    (row): VideoCard => ({
-      id: row.id,
-      title: row.title,
-      filename: row.filename,
-      duration: Number(row.duration_sec),
-      poster: row.poster_url,
-      status: row.status,
-      path: row.path,
-      sourceId: row.source_id,
-      frameCount: Number(row.frame_count),
-      vectorCount: Number(row.vector_count),
-      sizeMb: Number(row.size_mb),
-    }),
-  );
-});
+export const listVideos = createServerFn({ method: "GET" })
+  .validator((input?: { cookie?: string }) => input || {})
+  .handler(async ({ data }) => {
+    await seedIfEmpty();
+    await runTickJobsInternal();
+    const sql = await getSql();
 
-export const getVideo = createServerFn({ method: "GET" })
-  .validator((input: { id: string }) => input)
+    let activeCookie = data.cookie?.trim() || getGlobal115Cookie();
+    if (!activeCookie) {
+      const sources = await sql<{ config: unknown }>`
+        select config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
+      `;
+      for (const s of sources) {
+        const cfg = asJson<{ cookie?: string }>(s.config, {});
+        if (cfg.cookie) {
+          activeCookie = cfg.cookie;
+          setGlobal115Cookie(cfg.cookie);
+          break;
+        }
+      }
+    } else {
+      setGlobal115Cookie(activeCookie);
+    }
+
+    const rows = await sql<{
+      id: string;
+      title: string;
+      filename: string;
+      duration_sec: number;
+      poster_url: string;
+      status: VideoCard["status"];
+      path: string;
+      source_id: string;
+      frame_count: number;
+      vector_count: number;
+      size_mb: number;
+      pick_code: string;
+      meta: unknown;
+    }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb, pick_code, meta from videos order by indexed_at desc nulls last, id desc`;
+
+    return Promise.all(
+      rows.map(async (row): Promise<VideoCard> => {
+        let poster = row.poster_url;
+        const meta = asJson<{ pickCode?: string }>(row.meta, {});
+        const pc = row.pick_code || meta.pickCode || row.id.replace("vid_115_", "");
+
+        // 若当前海报非真实 JPEG (例如仍为旧 SVG 占位图)，且有 pickcode 与 cookie，尝试拉取真实封面
+        if (poster.startsWith("data:image/svg") && pc && activeCookie) {
+          try {
+            const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
+            if (realImg) {
+              poster = realImg;
+              await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        return {
+          id: row.id,
+          title: row.title,
+          filename: row.filename,
+          duration: Number(row.duration_sec),
+          poster,
+          status: row.status,
+          path: row.path,
+          sourceId: row.source_id,
+          frameCount: Number(row.frame_count),
+          vectorCount: Number(row.vector_count),
+          sizeMb: Number(row.size_mb),
+        };
+      }),
+    );
+  });
+
+export const getVideo = createServerFn({ method: "POST" })
+  .validator((input: { id: string; cookie?: string }) => input)
   .handler(async ({ data }) => {
     await seedIfEmpty();
     const sql = await getSql();
+
+    let activeCookie = data.cookie?.trim() || getGlobal115Cookie();
+    if (!activeCookie) {
+      const sources = await sql<{ config: unknown }>`
+        select config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
+      `;
+      for (const s of sources) {
+        const cfg = asJson<{ cookie?: string }>(s.config, {});
+        if (cfg.cookie) {
+          activeCookie = cfg.cookie;
+          setGlobal115Cookie(cfg.cookie);
+          break;
+        }
+      }
+    } else {
+      setGlobal115Cookie(activeCookie);
+    }
+
     const videos = await sql<{
       id: string;
       title: string;
@@ -151,10 +214,34 @@ export const getVideo = createServerFn({ method: "GET" })
       frame_count: number;
       vector_count: number;
       size_mb: number;
+      pick_code: string;
       meta: unknown;
     }>`select * from videos where id = ${data.id}`;
     const video = videos[0];
     if (!video) return null;
+
+    const meta = asJson<{ pickCode?: string }>(video.meta, {});
+    const pc = video.pick_code || meta.pickCode || video.id.replace("vid_115_", "");
+
+    let poster = video.poster_url;
+    let realFramesList: string[] = [];
+
+    // 尝试直接向 115 官方拉取真实多时间戳视频帧
+    if (pc && activeCookie) {
+      try {
+        const real115 = await fetch115VideoRealFrames(activeCookie, pc);
+        if (real115.poster) {
+          poster = real115.poster;
+          await sql`update videos set poster_url = ${real115.poster} where id = ${video.id}`;
+        }
+        if (real115.frames.length > 0) {
+          realFramesList = real115.frames;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const frames = await sql<{
       id: string;
       video_id: string;
@@ -162,6 +249,19 @@ export const getVideo = createServerFn({ method: "GET" })
       still_url: string;
       scene_tags: unknown;
     }>`select id, video_id, timestamp_sec, still_url, scene_tags from frames where video_id = ${data.id} order by timestamp_sec`;
+
+    // 动态同步更新各帧的真实画面
+    for (let idx = 0; idx < frames.length; idx++) {
+      const f = frames[idx]!;
+      if (realFramesList[idx]) {
+        f.still_url = realFramesList[idx]!;
+        await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
+      } else if (poster && poster.startsWith("data:image/jpeg")) {
+        f.still_url = poster;
+        await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
+      }
+    }
+
     const regions = await sql<{
       id: string;
       frame_id: string;
@@ -175,7 +275,7 @@ export const getVideo = createServerFn({ method: "GET" })
         title: video.title,
         filename: video.filename,
         duration: Number(video.duration_sec),
-        poster: video.poster_url,
+        poster,
         status: video.status,
         path: video.path,
         sourceId: video.source_id,

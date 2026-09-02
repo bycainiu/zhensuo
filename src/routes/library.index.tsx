@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { formatBytes, formatClock } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
+import { getStored115Cookie } from "@/lib/pan115/client";
+
 export const Route = createFileRoute("/library/")({ component: LibraryPage });
 
 function LibraryPage() {
   const q = useQuery({
     queryKey: ["videos"],
-    queryFn: () => listVideos(),
+    queryFn: () => listVideos({ data: { cookie: getStored115Cookie() } }),
     refetchInterval: (query) => {
       const data = query.state.data;
       if (data && data.some((v) => v.status !== "ready")) {

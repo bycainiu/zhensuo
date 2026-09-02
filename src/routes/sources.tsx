@@ -152,11 +152,15 @@ export function SourcesPage() {
         if (res.status === 2 && res.user) {
           if (typeof window !== "undefined") {
             localStorage.setItem("frameseek_115_user", JSON.stringify(res.user));
+            if (res.cookie) {
+              localStorage.setItem("frameseek_pan115_cookie", res.cookie);
+            }
           }
           toast.success("115 扫码登录成功！已接入真实网盘账号");
           void qc.invalidateQueries({ queryKey: ["sources"] });
           void qc.invalidateQueries({ queryKey: ["overview"] });
           void qc.invalidateQueries({ queryKey: ["115"] });
+          void qc.invalidateQueries({ queryKey: ["videos"] });
         }
       } catch {
         // ignore poll errors
@@ -169,16 +173,18 @@ export function SourcesPage() {
   // 生产 Cookie 校验与登录
   const saveCookieMut = useMutation({
     mutationFn: (cookie: string) => save115Cookie({ data: { cookie } }),
-    onSuccess: (res) => {
+    onSuccess: (res, vars) => {
       if (res.ok && res.user) {
         if (typeof window !== "undefined") {
           localStorage.setItem("frameseek_115_user", JSON.stringify(res.user));
+          localStorage.setItem("frameseek_pan115_cookie", vars);
         }
         toast.success(res.detail || "115 Cookie 校验成功！已连接");
         setCookieInput("");
         void qc.invalidateQueries({ queryKey: ["sources"] });
         void qc.invalidateQueries({ queryKey: ["overview"] });
         void qc.invalidateQueries({ queryKey: ["115"] });
+        void qc.invalidateQueries({ queryKey: ["videos"] });
       } else {
         toast.error(res.detail || "Cookie 校验失败，请确认凭证有效");
       }

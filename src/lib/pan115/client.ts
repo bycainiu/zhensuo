@@ -281,10 +281,29 @@ export async function verify115Cookie(rawCookie: string): Promise<{ ok: boolean;
   return { ok: false, detail: "115 Cookie 校验失败，请确认是否登录且 Cookie 未过期" };
 }
 
+// 服务端全局 Cookie 凭证缓存
+let GLOBAL_ACTIVE_COOKIE = "";
+
+export function setGlobal115Cookie(cookie: string) {
+  if (cookie && typeof cookie === "string" && cookie.trim()) {
+    GLOBAL_ACTIVE_COOKIE = cookie.trim();
+  }
+}
+
+export function getGlobal115Cookie(): string {
+  return GLOBAL_ACTIVE_COOKIE;
+}
+
+export function getStored115Cookie(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("frameseek_pan115_cookie") || "";
+}
+
 /**
  * 4. 生产：获取 115 真实用户画像
  */
 export async function fetch115UserProfile(cookie: string, deviceName = "Apple 客户端"): Promise<Pan115User> {
+  if (cookie) setGlobal115Cookie(cookie);
   const result = await verify115Cookie(cookie);
   if (result.ok && result.user) {
     return { ...result.user, device: deviceName };
@@ -308,6 +327,7 @@ export async function fetch115UserProfile(cookie: string, deviceName = "Apple �
  */
 export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: string): Promise<string | null> {
   if (!urlOrPickcode) return null;
+  const activeCookie = cookie?.trim() || getGlobal115Cookie();
 
   const candidateUrls: string[] = [];
   if (urlOrPickcode.startsWith("http")) {
@@ -315,8 +335,10 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
   } else {
     candidateUrls.push(
       `https://imgload.115.com/?pickcode=${urlOrPickcode}&type=thumb`,
+      `https://imgload.115.com/?pickcode=${urlOrPickcode}&type=snap`,
       `https://v.anxia.com/?pickcode=${urlOrPickcode}&format=jpg`,
       `https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`,
+      `https://webapi.115.com/files/image?pickcode=${urlOrPickcode}`,
     );
   }
 
@@ -324,12 +346,15 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
     try {
       const res = await fetch(targetUrl, {
         headers: {
-          Cookie: cookie || "",
+          Cookie: activeCookie,
           Referer: "https://115.com/",
+          Origin: "https://115.com",
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
         },
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(4500),
       });
 
       if (res.ok) {
@@ -359,6 +384,8 @@ export async function fetch115VideoRealFrames(
   pickCode: string,
 ): Promise<{ poster?: string; frames: string[] }> {
   if (!pickCode) return { frames: [] };
+  const activeCookie = cookie?.trim() || getGlobal115Cookie();
+  if (activeCookie) setGlobal115Cookie(activeCookie);
 
   let posterBase64: string | undefined = undefined;
   const framesBase64: string[] = [];
@@ -368,12 +395,13 @@ export async function fetch115VideoRealFrames(
     const videoApiUrl = `${PAN115_ENDPOINTS.videoInfo}?pickcode=${pickCode}`;
     const res = await fetch(videoApiUrl, {
       headers: {
-        Cookie: cookie || "",
+        Cookie: activeCookie,
         Referer: "https://115.com/",
+        Origin: "https://115.com",
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(4500),
     });
 
     if (res.ok) {
@@ -391,7 +419,7 @@ export async function fetch115VideoRealFrames(
       if (json.data) {
         const targetThumb = json.data.thumb_url || json.data.snap_url || json.data.cover_url;
         if (targetThumb) {
-          const uri = await fetch115ImageAsDataUri(cookie, targetThumb);
+          const uri = await fetch115ImageAsDataUri(activeCookie, targetThumb);
           if (uri) {
             posterBase64 = uri;
             framesBase64.push(uri);
@@ -408,7 +436,7 @@ export async function fetch115VideoRealFrames(
     const sbUrl = `${PAN115_ENDPOINTS.storyboard}?pickcode=${pickCode}`;
     const sbRes = await fetch(sbUrl, {
       headers: {
-        Cookie: cookie || "",
+        Cookie: activeCookie,
         Referer: "https://115.com/",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
       },
@@ -423,9 +451,9 @@ export async function fetch115VideoRealFrames(
         };
       };
       if (sbJson.data?.list && Array.isArray(sbJson.data.list)) {
-        for (const item of sbJson.data.list.slice(0, 6)) {
+        for (const item of sbJson.data.list.slice(0, 8)) {
           if (item.url) {
-            const frameUri = await fetch115ImageAsDataUri(cookie, item.url);
+            const frameUri = await fetch115ImageAsDataUri(activeCookie, item.url);
             if (frameUri && !framesBase64.includes(frameUri)) {
               framesBase64.push(frameUri);
             }
@@ -437,9 +465,9 @@ export async function fetch115VideoRealFrames(
     // ignore
   }
 
-  // 3. 若仍未提取到，直接请求 pickcode 原图
+  // 3. 直接通过 pickcode 候选接口拉取真实转码缩略图
   if (!posterBase64) {
-    const directThumb = await fetch115ImageAsDataUri(cookie, pickCode);
+    const directThumb = await fetch115ImageAsDataUri(activeCookie, pickCode);
     if (directThumb) {
       posterBase64 = directThumb;
       if (framesBase64.length === 0) framesBase64.push(directThumb);
