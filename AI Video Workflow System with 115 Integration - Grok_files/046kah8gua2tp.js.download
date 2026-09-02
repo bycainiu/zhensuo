@@ -1,0 +1,410 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="6b43441d-0c7d-d8a8-6d26-e4cd123ff0d2")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,428625,e=>{e.q("https://cdn.grok.com/_next/static/media/excel.2qr9d5eu_wgd8.svg")},3974217,e=>{e.q("https://cdn.grok.com/_next/static/media/google-docs.0jrdfgr805dpo.svg")},818915,e=>{e.q("https://cdn.grok.com/_next/static/media/google-sheets.1ydtv1t-hwmh4.svg")},4911773,e=>{e.q("https://cdn.grok.com/_next/static/media/google-slides.1x1vd9j4pofm9.svg")},9538029,e=>{e.q("https://cdn.grok.com/_next/static/media/powerpoint.3vh8jlzhjvcyo.svg")},3742819,e=>{e.q("https://cdn.grok.com/_next/static/media/word.2zans2ofa7_1c.svg")},1979495,e=>{e.q("https://cdn.grok.com/_next/static/media/orb-worker.11bs2pcp2eyq-.ts")},1047113,e=>{e.q("https://cdn.grok.com/_next/static/media/placeholder-orb.3vdgr_lx46lxv.png")},7115223,e=>{"use strict";var t=e.i(3583862),a=e.i(7276932),i=e.i(2123557),s=e.i(9601195),r=e.i(3710507),o=e.i(7671246);let n="h-7 gap-1.5 rounded-[10px] border-0 px-2 text-[15px] font-medium leading-[22px] tracking-[-0.154px]",l=(0,o.cn)(n,"bg-[oklch(0.249_0.07_46.569/0.05)] hover:bg-[oklch(0.249_0.07_46.569/0.08)]","dark:bg-input-button-background dark:hover:bg-input-button-background-hover","text-[oklch(0.34_0.003_106.581)] dark:text-fg-primary"),c=(0,o.cn)(n,"bg-[oklch(0.293_0.002_106.509)] text-white hover:bg-[oklch(0.28_0.002_106.509)]","dark:bg-button-filled dark:text-fg-invert dark:hover:bg-button-filled-hover"),d="flex w-full max-w-[497px] flex-col items-center gap-[5px] text-center",h="w-full text-balance text-[17px] font-[650] leading-[22px] tracking-[-0.442px] text-fg-primary",u="text-pretty text-[15px] font-[425] leading-[22px] tracking-[-0.154px] text-[oklch(0.5_0_0)] dark:text-fg-secondary";e.s(["ErrorCard",0,e=>{let n,c,p,m,f,g,v,b,x=(0,a.c)(40),{title:y,description:w,detail:k,icon:_,cta:A}=e,S=(0,s.useWdRefresh)(),{routeToConversation:C}=(0,i.useGrokRouter)();x[0]!==C?(n=()=>{C({})},x[0]=C,x[1]=n):n=x[1];let R=n;if(S){let e,a,i,s,n,c,p;return x[2]!==_?(e=_&&(0,t.jsx)("div",{className:"mb-4",children:_}),x[2]=_,x[3]=e):e=x[3],x[4]!==y?(a=(0,t.jsx)("h1",{className:h,children:y}),x[4]=y,x[5]=a):a=x[5],x[6]!==w?(i=(0,t.jsx)("p",{className:u,children:w}),x[6]=w,x[7]=i):i=x[7],x[8]!==A||x[9]!==R?(s="string"==typeof A?(0,t.jsx)(r.Link,{route:{page:"main"},onClick:R,className:(0,o.cn)("inline-flex items-center justify-center transition-colors","focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",l),children:A}):A,x[8]=A,x[9]=R,x[10]=s):s=x[10],x[11]!==k?(n=k&&(0,t.jsx)("div",{className:"mt-2",children:k}),x[11]=k,x[12]=n):n=x[12],x[13]!==i||x[14]!==s||x[15]!==n?(c=(0,t.jsxs)("div",{className:"flex flex-col items-center gap-4",children:[i,s,n]}),x[13]=i,x[14]=s,x[15]=n,x[16]=c):c=x[16],x[17]!==e||x[18]!==a||x[19]!==c?(p=(0,t.jsx)("div",{className:"w-full h-full flex justify-center items-center px-4",children:(0,t.jsxs)("div",{className:d,children:[e,a,c]})}),x[17]=e,x[18]=a,x[19]=c,x[20]=p):p=x[20],p}return x[21]!==_?(c=_&&(0,t.jsx)("div",{className:"mb-4",children:_}),x[21]=_,x[22]=c):c=x[22],x[23]!==y?(p=(0,t.jsx)("h1",{className:"text-3xl font-medium text-balance",children:y}),x[23]=y,x[24]=p):p=x[24],x[25]!==w?(m=(0,t.jsx)("div",{className:"mt-6 text-secondary text-pretty",children:w}),x[25]=w,x[26]=m):m=x[26],x[27]!==A||x[28]!==R?(f="string"==typeof A?(0,t.jsx)(r.Link,{route:{page:"main"},onClick:R,className:"focus:outline-none focus-visible:ring-1 focus-visible:ring-ring py-2 px-3 rounded-lg bg-button-secondary hover:bg-button-secondary-hover",children:A}):A,x[27]=A,x[28]=R,x[29]=f):f=x[29],x[30]!==f?(g=(0,t.jsx)("div",{className:"mt-8",children:f}),x[30]=f,x[31]=g):g=x[31],x[32]!==k?(v=k&&(0,t.jsx)("div",{className:"mt-6",children:k}),x[32]=k,x[33]=v):v=x[33],x[34]!==c||x[35]!==p||x[36]!==m||x[37]!==g||x[38]!==v?(b=(0,t.jsx)("div",{className:"w-full h-full flex justify-center items-center",children:(0,t.jsxs)("div",{className:"flex flex-col max-w-xl text-center items-center justify-center px-4",children:[c,p,m,g,v]})}),x[34]=c,x[35]=p,x[36]=m,x[37]=g,x[38]=v,x[39]=b):b=x[39],b},"WD_ERROR_BODY_CN",0,d,"WD_ERROR_DESC_CN",0,u,"WD_ERROR_FILL_BTN_CN",0,c,"WD_ERROR_TINT_BTN_CN",0,l,"WD_ERROR_TITLE_CN",0,h])},5187256,e=>{"use strict";var t=e.i(7276932),a=e.i(7145562);e.i(1354374);var i=e.i(352006);e.s(["useDocumentTitle",0,function(e,s,r){let o,n,l=(0,t.c)(6),{t:c}=(0,i.useTranslation)("base");l[0]!==s||l[1]!==r||l[2]!==e||l[3]!==c?(o=()=>{if(r&&e?document.title=e:document.title=e?c("browser-page-title",{defaultValue:"{{pageTitle}} - Grok",pageTitle:e}):"Grok",s){let e=document.querySelector("meta[name=description]");e&&(e.content=s)}},n=[e,c,s,r],l[0]=s,l[1]=r,l[2]=e,l[3]=c,l[4]=o,l[5]=n):(o=l[4],n=l[5]),(0,a.useEffect)(o,n)}])},3956456,e=>{"use strict";var t=e.i(3583862),a=e.i(7276932),i=e.i(7115223),s=e.i(9705032),r=e.i(5187256),o=e.i(3710507);e.i(1354374);var n=e.i(352006);e.s(["default",0,function(){let e,l,c,d,h,u,p=(0,a.c)(12),{t:m}=(0,n.useTranslation)("base");p[0]!==m?(e=m("pages.404.title","Page not found"),p[0]=m,p[1]=e):e=p[1];let f=e;return(0,r.useDocumentTitle)(f),p[2]===Symbol.for("react.memo_cache_sentinel")?(l={page:"main"},p[2]=l):l=p[2],p[3]===Symbol.for("react.memo_cache_sentinel")?(c=(0,t.jsx)(o.Link,{route:l,className:"block focus:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-lg",children:(0,t.jsx)(s.GrokWordLogo,{height:20,width:60,className:"opacity-80 hover:opacity-100 fill-black dark:fill-white"})}),p[3]=c):c=p[3],p[4]!==m?(d=m("pages.404.description","There was an error loading this page. Please verify that you are using a correct URL or contact one of the admins if the issue persists."),p[4]=m,p[5]=d):d=p[5],p[6]!==m?(h=m("pages.404.home","Return to home"),p[6]=m,p[7]=h):h=p[7],p[8]!==f||p[9]!==d||p[10]!==h?(u=(0,t.jsxs)("div",{className:"w-full min-h-dvh flex flex-col items-center justify-center pt-4",children:[c,(0,t.jsx)(i.ErrorCard,{title:f,description:d,cta:h})]}),p[8]=f,p[9]=d,p[10]=h,p[11]=u):u=p[11],u}])},8777894,e=>{"use strict";var t=e.i(3583862),a=e.i(7276932),i=e.i(458272),s=e.i(7671246),r=e.i(4077349),o=e.i(3267683);function n(e){let i,n,l=(0,a.c)(6),{visible:c,isIncognito:d,className:h}=e,u=void 0!==d&&d;return l[0]!==h||l[1]!==u||l[2]!==c?(i=c&&(0,t.jsx)(o.motion.svg,{"aria-hidden":!0,initial:{opacity:0},animate:{opacity:1},exit:{opacity:0},transition:{duration:.15},className:(0,s.cn)("pointer-events-none absolute inset-0 size-full",h),children:(0,t.jsx)("rect",{className:(0,s.cn)("wd-drop-ring",u&&"wd-drop-ring-incognito")})},"drop-ring"),l[0]=h,l[1]=u,l[2]=c,l[3]=i):i=l[3],l[4]!==i?(n=(0,t.jsx)(r.AnimatePresence,{children:i}),l[4]=i,l[5]=n):n=l[5],n}function l(e){return e.isFileDragOver}e.s(["DropRing",0,n,"QueryBarDropRing",0,function(e){let s,r=(0,a.c)(3),{isIncognito:o}=e,c=void 0!==o&&o,d=(0,i.useChatPageStore)(l);return r[0]!==d||r[1]!==c?(s=(0,t.jsx)(n,{visible:d,isIncognito:c,className:"z-30"}),r[0]=d,r[1]=c,r[2]=s):s=r[2],s}])},5065,e=>{"use strict";let t=(0,e.i(9795581).default)("Copy",[["rect",{width:"14",height:"14",x:"8",y:"8",rx:"2",ry:"2",key:"17jyea"}],["path",{d:"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",key:"zix9uf"}]]);e.s(["Copy",0,t],5065)},6847518,e=>{"use strict";var t=e.i(2315774);e.s(["MoreHorizontal",()=>t.default])},7408042,e=>{"use strict";let t=`
+attribute vec2 aPos;
+attribute vec2 aUV;
+varying vec2 vUV;
+void main() {
+  vUV = aUV;
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`,a=`
+float h1(float x) { return fract(sin(x * 127.1) * 43758.5453); }
+
+// ── starfield — a real galaxy in a glass sphere: a tilted galactic band
+// of dense star-dust and glowing nebula pockets, dark dust lanes cutting
+// through it, three scales of twinkling stars, deep-space black behind.
+vec4 starfield(vec3 n, float t) {
+  float lon = atan(n.z, n.x);
+  float lat = asin(clamp(n.y, -1.0, 1.0));
+
+  // per-orb structural variance, derived from the seed phase: every orb gets
+  // its own galaxy — band tilt/undulation/width, star density, pocket hues
+  float v1 = fract(uPhase * 7.13);
+  float v2 = fract(uPhase * 3.71);
+  float v3 = fract(uPhase * 5.37);
+
+  // ── galaxy ARCHETYPE: each orb is one of four different skies
+  // 0 spiral (milky-way band) \xb7 1 emission nebula (vivid cloud, few stars)
+  // 2 galactic core (warm blazing bulge) \xb7 3 deep field (sparse, crystalline)
+  float at = uArch >= 0.0 ? uArch : floor(fract(uPhase * 9.73) * 4.0);
+  float isNeb = step(0.5, at) * (1.0 - step(1.5, at));
+  float isCore = step(1.5, at) * (1.0 - step(2.5, at));
+  float isDeep = step(2.5, at);
+
+  // galactic plane: density concentrates in a band around a tilted equator.
+  // lon frequencies MUST be integers: lon wraps at \xb1π, and a non-integer
+  // frequency doesn't tile across that seam — it stamps a hard crease that
+  // tumbles into view as the sphere spins.
+  float gb = lat + (0.15 + 0.4 * v1) * sin(lon * (1.0 + floor(v2 * 2.0)) + 1.3)
+           + 0.12 * sin(lon * 3.0 + t * 0.1);
+  float band = exp(-gb * gb * (5.0 + 10.0 * v3));
+  band = mix(band, max(band, 0.8), isNeb); // nebula: cloud fills the whole sky
+  band *= 1.0 - 0.85 * isDeep; // deep field: nearly empty void
+
+  // nebula: two octaves of warped wisps, glowing pockets along the band
+  float n1 = sin(lon * 2.0 + sin(lat * 3.0 + t * 0.25) * 1.6 + t * 0.15);
+  float n2 = sin(lon * 5.0 - sin(lat * 4.0 - t * 0.2) * 1.2 - t * 0.22 + 2.4);
+  float neb = pow(0.5 + 0.5 * n1, 2.0) * (0.45 + 0.55 * pow(0.5 + 0.5 * n2, 2.0));
+  // dark dust lanes carved through the bright band
+  float lane = pow(0.5 + 0.5 * sin(lon * 4.0 + lat * 7.0 + sin(lon * 2.0) * 2.0), 3.0);
+  float galaxy = band * neb * (1.0 - lane * (0.55 + 0.35 * v2));
+  float w0g = clamp(galaxy, 0.0, 1.0); // ensure the band registers in alpha
+  galaxy = w0g;
+  // Milky-Way dust: mostly cool blue-white star haze, the palette only as a
+  // faint cast — real galaxies are desaturated except the warm core
+  // per-orb color identity: how strongly (and with which accents) the dust is
+  // tinted varies orb to orb — some stay silver-blue, others go violet/amber
+  vec3 hue = mix(mix(uC0, uC1, v1), mix(uC1, uC2, v3), 0.5 + 0.5 * sin(lon + lat * 2.0 - t * 0.2));
+  // saturation push: keep the dust hue vivid even after all the mixing
+  vec3 hueGrey = vec3(dot(hue, vec3(0.299, 0.587, 0.114)));
+  hue = clamp(hueGrey + (hue - hueGrey) * 1.45, 0.0, 1.0);
+  // the palette carries each agent's identity — dust leans firmly into it
+  // (different agents on one screen read as different colored skies)
+  vec3 dust = mix(vec3(0.72, 0.78, 0.92), hue, 0.45 + 0.3 * v1 + 0.45 * isNeb);
+  vec3 col = dust * galaxy * (0.6 + 0.9 * isNeb);
+  // rotation streaks: faint orbital shear lines inside the band, drifting —
+  // the galaxy visibly *turns*
+  float shear = sin(lon * 13.0 + lat * 4.0 - t * 0.35) * sin(lon * 5.0 + t * 0.2);
+  col += dust * band * neb * max(shear, 0.0) * 0.14;
+  // a second, fainter dust arm crossing the main band — spiral-galaxy depth
+  float gb2 = lat - (0.35 + 0.25 * v2) * sin(lon * 2.0 - 1.1) + 0.4;
+  float arm = exp(-gb2 * gb2 * 7.0) * neb;
+  col += mix(dust, uC1, 0.35) * arm * 0.2;
+  // the void itself is never pure black: a whisper of deep indigo that
+  // breathes — the "magic" ambient of a long-exposure sky
+  // the void itself carries the agent's hue — the strongest identity cue,
+  // since it covers the whole sphere
+  vec3 voidGlow = mix(vec3(0.04, 0.03, 0.1), mix(uC0, mix(uC1, uC2, v3), v1) * 0.22, 0.75);
+  col += voidGlow * (0.5 + 0.22 * sin(t * 0.4 + lon)) * (0.4 + 0.6 * band);
+  // warm amber core glow deep in the band
+  col += vec3(1.0, 0.88, 0.68) * pow(band, 4.0) * pow(neb, 2.0) * 0.4;
+  // galactic-core archetype: a blazing warm bulge with a halo of star-fog,
+  // fixed to the rotating sphere so it wheels around as the galaxy turns
+  float ca = v2 * 6.28318;
+  vec3 Cdir = normalize(vec3(cos(ca) * 0.85, 0.6 * (v3 - 0.5), sin(ca) * 0.85));
+  float bulge = max(dot(n, Cdir), 0.0);
+  col += mix(vec3(1.0, 0.85, 0.6), uC2, 0.25) * (pow(bulge, 14.0) * 1.6 + pow(bulge, 4.0) * 0.5) * isCore;
+  // nebula pockets, two layers in different hues: hot spots of saturated
+  // palette color glowing in the dust, slowly breathing
+  float pocket = pow(neb, 5.0) * band * (0.7 + 0.3 * sin(t * 0.6 + lon * 3.0));
+  col += mix(uC2, uC0, fract(v1 + 0.5 * sin(lon * 2.0) + 0.5)) * pocket * (0.5 + 0.4 * v2 + 0.8 * isNeb);
+  float pocket2 = pow(0.5 + 0.5 * sin(lon * 3.0 + lat * 4.0 - t * 0.18 + 2.0), 6.0) * band;
+  col += mix(uC1, uC2, v3) * pocket2 * (0.25 + 0.3 * v1 + 0.5 * isNeb);
+  // Detail factor by orb size (1 = large): small list orbs keep faded bright stars but drop the grain
+  // and most of the dense faint dust — those are what read as granular noise / alias at list sizes.
+  float detail = smoothstep(90.0, 200.0, uRes.y);
+  // milky grain: ultra-fine star dust packed into the band — the granular
+  // texture that says "Milky Way" in long-exposure shots
+  vec2 gg = vec2(lon, lat) * 34.0;
+  vec2 gc = floor(gg);
+  vec2 gf = fract(gg);
+  float gh = h1(gc.x * 3.7 + gc.y * 11.3);
+  vec2 gp = vec2(0.2 + 0.6 * h1(gh * 91.0), 0.2 + 0.6 * h1(gh * 47.0));
+  float gd = length((gf - gp) * vec2(cos(lat), 1.0));
+  float grain = exp(-gd * gd * 700.0 * clamp(uRes.y / 420.0, 0.22, 1.0)) * step(0.3, gh) * (0.15 + 0.85 * band);
+  col += vec3(0.88, 0.9, 1.0) * grain * 0.4 * detail;
+  float w = clamp(galaxy * 0.7 + pow(band, 4.0) * 0.25, 0.0, 1.0);
+
+
+
+  // three star scales: a few bright, many mid, dense faint dust (denser in band)
+  for (int s = 0; s < 3; s++) {
+    float K = s == 0 ? 6.0 : (s == 1 ? 11.0 : 19.0);
+    vec2 g = vec2(lon, lat) * K;
+    vec2 cell = floor(g);
+    vec2 f = fract(g);
+    float hx = h1(cell.x * 13.7 + cell.y * 7.3 + float(s) * 91.0);
+    float hy = h1(cell.x * 5.1 + cell.y * 17.9 + float(s) * 37.0);
+    vec2 sp = vec2(0.15 + 0.7 * hx, 0.15 + 0.7 * hy);
+    float d = length((f - sp) * vec2(cos(lat), 1.0));
+    // archetype star census: nebulae are star-poor, cores star-rich,
+    // deep fields sparse but every star counts
+    float census = (v2 - 0.5) * 0.2 + 0.35 * isNeb - 0.2 * isCore + 0.3 * isDeep;
+    float keep = step((s == 2 ? 0.3 : 0.55) + census, h1(hx * 89.0 + hy * 31.0) + band * 0.25);
+    // small orbs: stars must stay >= ~1px and twinkle gently, or they alias
+    // into flicker as the sphere tumbles
+    float resFac = clamp(uRes.y / 420.0, 0.22, 1.0);
+    float tw = mix(0.92, 0.6 + 0.4 * sin(t * (1.5 + 3.0 * hx) + hx * 40.0), resFac);
+    // per-star size: each star draws its own radius from the hash (4x range),
+    // and brightness follows size — a real magnitude distribution
+    float hz = h1(hx * 53.0 + hy * 71.0 + cell.x);
+    float sizeJit = 0.35 + 1.8 * hz * hz; // few big, many small
+    float sharp = (s == 0 ? 260.0 : (s == 1 ? 700.0 : 1600.0)) / sizeJit * resFac;
+    float star = exp(-d * d * sharp) * keep * tw;
+    // near-white stars with the faintest temperature variation, like the sky
+    vec3 tint = mix(vec3(1.0), hx < 0.33 ? vec3(0.85, 0.9, 1.0) : (hx < 0.66 ? vec3(1.0, 0.95, 0.85) : mix(vec3(1.0), uC1, 0.3)), 0.6);
+    float bright = (s == 0 ? 1.7 : (s == 1 ? 0.9 : 0.5)) * (0.55 + 0.7 * sizeJit);
+    // small orbs: keep the bright/mid stars (just faded), but drop most of the dense faint dust (s==2)
+    // and the grain — those are what read as granular noise at list sizes.
+    float starFade = mix(s == 2 ? 0.14 : 0.45, 1.0, detail);
+    col += tint * star * bright * starFade;
+    // the biggest stars get a soft halo bloom + diffraction-cross sparkle
+    if (s == 0) {
+      float big = smoothstep(1.2, 2.0, sizeJit);
+      col += tint * exp(-d * d * 60.0) * 0.18 * big * tw * starFade;
+      vec2 dd = (f - sp) * vec2(cos(lat), 1.0);
+      float spike = exp(-dd.x * dd.x * 1200.0) * exp(-dd.y * dd.y * 26.0)
+                  + exp(-dd.y * dd.y * 1200.0) * exp(-dd.x * dd.x * 26.0);
+      col += tint * spike * 0.3 * big * tw * starFade;
+      w = max(w, spike * 0.3 * big * starFade);
+    }
+    w = max(w, star * min(bright, 1.5) * starFade);
+  }
+
+  // pulsar: one bright star per orb that flashes rhythmically with a halo —
+  // audio pushes its beat brighter and faster
+  float pa = v1 * 6.28318;
+  vec3 P = normalize(vec3(sin(pa) * 0.9, 1.4 * (v2 - 0.5), cos(pa) * 0.9));
+  float pd = max(dot(n, P), 0.0);
+  float beat = pow(0.5 + 0.5 * sin(t * (1.2 + v3 + 1.5 * uAudio) + v3 * 6.28), 8.0);
+  beat = min(1.0, beat + 0.6 * uAudio);
+  float pulsarFade = mix(0.45, 1.0, detail);
+  col += vec3(0.9, 0.95, 1.0) * (pow(pd, 900.0) * (0.6 + 1.2 * beat) + pow(pd, 110.0) * 0.5 * beat) * pulsarFade;
+  w = max(w, pow(pd, 900.0) * (0.5 + 0.5 * beat) * pulsarFade);
+
+  return vec4(min(col, vec3(1.0)), min(w, 1.0));
+}
+
+// Sample the rotating sphere at 3D point n (unit sphere). The ball TUMBLES:
+// it spins around a tilted axis while that axis itself slowly precesses and
+// the whole ball rolls — rotation on multiple axes, like a marble turned in
+// the hand, so the pattern travels over the poles too, not just sideways.
+vec4 sphereAt(vec3 n, float spin, float t) {
+  float roll = t * 0.13; // roll around the view axis
+  float cr = cos(roll), sr = sin(roll);
+  n = vec3(cr * n.x - sr * n.y, sr * n.x + cr * n.y, n.z);
+  float tilt = 0.45 + 0.35 * sin(t * 0.24); // precessing axis
+  float cx = cos(tilt), sx = sin(tilt);
+  n = vec3(n.x, cx * n.y - sx * n.z, sx * n.y + cx * n.z);
+  float cs = cos(spin), ss = sin(spin);
+  n = vec3(cs * n.x + ss * n.z, n.y, -ss * n.x + cs * n.z);
+  return starfield(n, t);
+}
+
+// The whole orb as a pure function of the (pre-lens) screen point p — the
+// in-shader lens re-evaluates this at displaced coordinates per RGB channel.
+vec3 shade(vec2 p) {
+  float r = length(p);
+  // No alpha mask: the shader renders edge-to-edge of the square canvas
+  // (the limb colors smear outward past r=1 as overscan), so the lens —
+  // SVG or in-shader — always has pixels to displace; otherwise it pulls
+  // transparent samples and stamps a hard arc inside the sphere. The CSS
+  // clip-path on the canvas wrapper cuts the true circular silhouette.
+#ifndef DUAL_LAYER
+  // Batch (list) orbs have no lens, so the square corners are never used —
+  // discard them to skip the whole galaxy compute for ~21% of pixels.
+  if (r > 1.0) { discard; }
+#endif
+  float t = uTime * 0.8 + uPhase;
+
+  // sphere geometry
+  float rr = min(r, 0.9995);
+  float z = sqrt(1.0 - rr * rr);
+  vec3 N = vec3(p.x, p.y, z);
+  float fres = pow(1.0 - z, 2.4); // 0 center -> 1 at the limb
+
+  // Front hemisphere point is N itself; the see-through far wall is hit by
+  // the refracted ray continuing through the glass to the back of the ball.
+  vec3 I = vec3(0.0, 0.0, -1.0);
+  vec3 R = refract(I, N, 0.75);
+  // exit point of the ray on the back of the unit sphere
+  float dHit = -2.0 * dot(N, R);
+  vec3 B = normalize(N + R * dHit);
+
+  // both layers live on the SAME rotating sphere — the front face and the
+  // far wall seen through the glass — so the whole ball reads as one object
+  // spinning, with the back side counter-sliding in true perspective.
+  // organic motion: the spin angle is integrated on the CPU (uSpin) so the
+  // rotation can accelerate, ease, and reverse smoothly — especially under
+  // audio. Pattern time keeps its own gentle warp for non-linear drift.
+  float sv = fract(uPhase * 6.31);
+  float sw = fract(uPhase * 2.17);
+  float tWarp = t
+    + (0.9 + 1.3 * sv) * sin(t * (0.09 + 0.07 * sw))
+    + (0.5 + 0.8 * sw) * sin(t * (0.21 + 0.09 * sv) + 2.6);
+  vec4 front = sphereAt(N, uSpin, tWarp);
+  // The back-wall galaxy sample doubles fragment cost; only the hero (single-orb)
+  // program keeps it. Batched list orbs skip it (invisible at small sizes).
+#ifdef DUAL_LAYER
+  vec4 back = sphereAt(B, uSpin, tWarp * 0.8 + 2.7);
+#else
+  vec4 back = vec4(0.0);
+#endif
+
+  // glass body: deep-space glass — near-black void with the anchor color
+  // breathing at the rim; just enough page light leaks through the edge
+  // to keep it reading as glass rather than a flat black disc
+  vec3 voidCol = mix(uAnchor * 0.04, uAnchor * 0.35, fres);
+  vec3 col = mix(uBg, voidCol, 0.97 - 0.04 * fres);
+  // mix (not add): the band REPLACES the glass color where it lives, so it
+  // reads on light pages instead of clipping to white
+  float fa = clamp(front.a, 0.0, 1.0);
+  float ba = clamp(back.a, 0.0, 1.0);
+  col = mix(col, back.rgb, ba * 0.16); // far-wall echo
+  col = mix(col, front.rgb, fa * 0.85);
+  {
+    // ── aurora borealis, voice as light — drawn in VIEW space so the
+    // curtains always hang in the visible upper sky (the galaxy tumbles
+    // behind them). Amplitude undulates like speech; fine rays shimmer
+    // through; classic green at the base climbing into violet.
+    float alon = atan(N.x, N.z);
+    float speech = pow(0.5 + 0.5 * sin(alon * 3.0 + sin(alon * 7.0 + t * 1.1) * 0.7 + t * 0.5), 3.0)
+                 * (0.55 + 0.45 * sin(alon * 5.0 - t * 0.65 + 1.7));
+    float sky = -N.y; // canvas blit flips Y: -N.y is the visible upper sky
+    float hang = smoothstep(-0.15, 0.5, sky);
+    float rays = 0.7 + 0.3 * sin(alon * 24.0 + sin(alon * 9.0 - t * 0.8) * 2.0 + t * 1.6);
+    // audio: the voice IS the aurora — curtains surge with live amplitude
+    float aur = clamp(speech, 0.0, 1.0) * hang * rays * (1.0 + 2.2 * uAudio);
+    // per-orb aurora character: some classic green→violet, others lean into
+    // the palette (teal→pink, blue→gold…)
+    float av = fract(uPhase * 2.93);
+    vec3 aurCol = mix(vec3(0.12, 0.95, 0.55), vec3(0.45, 0.35, 1.0),
+                      smoothstep(0.0, 0.95, sky + 0.35 * speech));
+    aurCol = mix(aurCol, mix(uC0, uC2, av), 0.15 + 0.4 * av);
+    col += aurCol * aur * 0.8;
+
+    // shooting star: every ~6s a meteor streaks across a random trajectory,
+    // white-hot head with an exponentially fading tail
+    float met = 4.5 + 3.5 * fract(uPhase * 4.91); // per-orb meteor cadence
+    float epoch = floor(t / met);
+    float ph = fract(t / met);
+    vec2 s0 = vec2(-1.1 + 2.2 * h1(epoch * 1.3), 0.85 - 1.4 * h1(epoch * 2.9));
+    vec2 sd = normalize(vec2(0.7 + 0.5 * h1(epoch * 4.1), -0.35 - 0.4 * h1(epoch * 5.3)));
+    vec2 head = s0 + sd * ph * 2.8;
+    vec2 rel = p - head;
+    float along = dot(rel, sd);
+    float perp = dot(rel, vec2(-sd.y, sd.x));
+    float vis = smoothstep(0.0, 0.06, ph) * smoothstep(0.5, 0.32, ph);
+    float tail = exp(-perp * perp * 1600.0) * exp(along * 9.0) * step(along, 0.0)
+               * smoothstep(-0.5, -0.02, along);
+    float headGlow = exp(-dot(rel, rel) * 900.0);
+    col += (vec3(1.0) * headGlow * 1.2 + mix(vec3(1.0), uC1, 0.3) * tail * 0.85) * vis;
+
+    // moving illumination: a broad diffuse gradient (a soft terminator)
+    // sweeps around the sphere, brightening whole regions of sky and dust in
+    // turn — this is what makes the ball feel LIT, not printed
+    vec3 LD = normalize(vec3(0.85 * sin(t * 0.42), 0.45 * sin(t * 0.26 + 1.2), 0.5));
+    float diffuse = 0.62 + 0.65 * max(dot(N, LD), 0.0);
+    // audio: the whole sky brightens and breathes with the voice
+    diffuse *= 1.0 + 0.35 * uAudio;
+    col *= diffuse;
+    // ── voice light: while speaking, a warm core flare wakes deep in the
+    // sphere and the rim catches the agent's color — the orb visibly *emits*
+    vec3 voiceCol = mix(uC1, vec3(1.0, 0.97, 0.9), 0.45);
+    col += voiceCol * pow(1.0 - rr, 1.8) * uAudio * 0.5; // inner flare
+    col += (uC1 * 0.7 + vec3(0.12)) * fres * uAudio * 0.65; // rim ignition
+    // sparkle excitement: stars glitter harder while the voice is live
+    col += col * uAudio * 0.18 * sin(t * 14.0 + rr * 40.0 + uPhase * 7.0);
+    // counter-rim: a faint atmospheric glow opposite the moving light
+    float counter = max(dot(N.xy, -LD.xy), 0.0) * fres;
+    col += mix(uC0, vec3(0.5, 0.6, 0.9), 0.5) * counter * 0.18;
+  }
+
+  // 3D lighting off the sphere normal — the key light DRIFTS slowly (like a
+  // light source moving in the room) and breathes in intensity, so the glass
+  // never feels statically lit
+  vec3 L1 = normalize(vec3(-0.45 + 0.3 * sin(t * 0.34), 0.62 + 0.2 * sin(t * 0.27 + 1.7), 0.64));
+  float keyAmp = 0.5 * (0.78 + 0.22 * sin(t * 0.45 + 2.2));
+  col += vec3(1.0) * pow(max(dot(N, L1), 0.0), 150.0) * keyAmp;
+  // broad soft sheen sweeping across the dome on a long period
+  vec3 LS = normalize(vec3(sin(t * 0.07) * 0.9, 0.35 + 0.3 * cos(t * 0.05), 0.7));
+  col += vec3(1.0) * pow(max(dot(N, LS), 0.0), 7.0) * 0.05;
+  vec3 L2 = normalize(vec3(0.52, -0.5 + 0.12 * sin(t * 0.09), 0.69)); // counter glint
+  col += vec3(1.0) * pow(max(dot(N, L2), 0.0), 140.0) * 0.25;
+  // fresnel rim — a bubble's edge catches a touch of the band's color
+  col = mix(col, front.rgb, fa * fres * 0.3);
+  // whisper of limb compression
+  float limb = smoothstep(0.94, 1.0, rr);
+  col = mix(col, col * 0.85, limb * 0.4);
+
+  return col;
+}`,i=`
+precision highp float;
+#define DUAL_LAYER
+varying vec2 vUV;
+uniform vec2 uRes;
+uniform vec3 uBg;
+uniform vec3 uAnchor, uC0, uC1, uC2;
+uniform float uTime, uPhase;
+uniform float uAudio; // live audio level 0..1 — the orb listens
+uniform float uSpin; // CPU-integrated spin angle (can accelerate & reverse)
+uniform float uArch; // galaxy archetype override; < 0 = derive from seed
+uniform float uLens; // in-shader lens displacement (p-units); 0 = lens off
+`+a+`
+void main() {
+  vec2 p = vUV * 2.0 - 1.0;
+  if (uLens > 0.0) {
+    float r = length(p);
+    // erf edge falloff: 0 inside, 1 at the silhouette (erf ≈ tanh(1.7725x),
+    // expanded — GLSL ES 1.00 has no tanh); band starts at 1 - depth
+    // (depth = 0.1), scale = 1/(depth\xb7√2)
+    float ex = exp(2.0 * 1.7724539 * (r - 0.9) / 0.1414214);
+    float fall = 0.5 + 0.5 * (ex - 1.0) / (ex + 1.0);
+    if (fall > 0.004) {
+      // swell: same incommensurate sines the SVG loop animated, so the rim
+      // compression re-spikes and the chroma fringe shimmers — free here
+      float swell = 1.0 + 0.16 * (0.6 * sin(uTime * 0.9 + uPhase)
+                                + 0.4 * sin(uTime * 1.7 + uPhase * 1.3));
+      float k = uLens * fall * swell;
+      // per-channel displacement (chromaAmount 2 → R \xd71.4, G \xd71.2, B \xd71.0),
+      // each with its own slow shimmer (the old per-channel chan factor)
+      float cR = 1.4 * (1.0 + 0.06 * sin(uTime * 1.3 + uPhase));
+      float cG = 1.2 * (1.0 + 0.06 * sin(uTime * 1.3 + uPhase + 2.1));
+      float cB = 1.0 * (1.0 + 0.06 * sin(uTime * 1.3 + uPhase + 4.2));
+      vec3 col = vec3(shade(p * (1.0 - k * cR)).r,
+                      shade(p * (1.0 - k * cG)).g,
+                      shade(p * (1.0 - k * cB)).b);
+      // specular pass (the map's B channel): glow lobes at \xb140\xb0 fading in at
+      // the rim, plus hard catchlights right at the silhouette edge
+      vec2 a2 = min(abs(p), 1.0);
+      float lobe = max(abs(a2.x * 0.766 + a2.y * 0.643), abs(a2.x * 0.766 - a2.y * 0.643));
+      float glow = 0.65 * pow(clamp((lobe - 0.0707) / 1.3435, 0.0, 1.0), 2.4) * fall;
+      glow += 1.02 * clamp(1.0 + (r - 1.0) / 0.15, 0.0, 1.0) * step(r, 1.0) * pow(lobe, 2.0);
+      col += vec3(0.25) * min(glow, 1.0);
+      gl_FragColor = vec4(col, 1.0);
+      return;
+    }
+  }
+  gl_FragColor = vec4(shade(p), 1.0);
+}`,s=`
+precision highp float;
+uniform float uTime;
+varying vec2 vUV;
+varying vec2 uRes;
+varying vec3 uBg, uAnchor, uC0, uC1, uC2;
+varying float uPhase, uAudio, uSpin, uArch;
+`+a+`
+void main() {
+  gl_FragColor = vec4(shade(vUV * 2.0 - 1.0), 1.0);
+}`,r=`
+attribute vec2 aPos;
+attribute vec2 aUV;
+attribute vec4 iPos;  // cellX, cellY, sizePx, spin
+attribute vec4 iDyn;  // audio, phase, arch, _
+attribute vec4 iBg;   // bg.rgb, anchor.r
+attribute vec4 iAnc;  // anchor.gb, c0.rg
+attribute vec4 iC0b;  // c0.b, c1.rgb
+attribute vec4 iC2;   // c2.rgb, _
+uniform vec2 uCanvas; // atlas size in device px
+varying vec2 vUV;
+varying vec2 uRes;
+varying vec3 uBg, uAnchor, uC0, uC1, uC2;
+varying float uPhase, uAudio, uSpin, uArch;
+void main() {
+  vUV = aUV;
+  uSpin = iPos.w;
+  uAudio = iDyn.x;
+  uPhase = iDyn.y;
+  uArch = iDyn.z;
+  uRes = vec2(iPos.z);
+  uBg = iBg.rgb;
+  uAnchor = vec3(iBg.a, iAnc.x, iAnc.y);
+  uC0 = vec3(iAnc.z, iAnc.w, iC0b.x);
+  uC1 = iC0b.yzw;
+  uC2 = iC2.xyz;
+  vec2 pPx = iPos.xy + aUV * iPos.z;          // top-down px within the cell
+  float ndcX = pPx.x / uCanvas.x * 2.0 - 1.0;
+  float ndcY = 1.0 - pPx.y / uCanvas.y * 2.0; // flip to GL y-up
+  gl_Position = vec4(ndcX, ndcY, 0.0, 1.0);
+}`;function o(e,t,a){let i=e.createShader(t);return i?(e.shaderSource(i,a),e.compileShader(i),e.getShaderParameter(i,e.COMPILE_STATUS))?i:(console.error("[AgentOrb] shader compile failed:",e.getShaderInfoLog(i)),e.deleteShader(i),null):null}let n=["uRes","uBg","uAnchor","uC0","uC1","uC2","uTime","uPhase","uAudio","uSpin","uArch","uLens"],l=0,c=new Map;function d(e,t){let a=null===e.lastT?0:Math.min(.1,Math.max(0,t-e.lastT));e.lastT=t;let i=Math.max(l,c.get(e.seed)??0),s=i>e.audioSmooth?.11:.3;e.audioSmooth+=(i-e.audioSmooth)*(a>0?1-Math.exp(-a/s):0);let r=i>e.audioFast?.04:.18;e.audioFast+=(i-e.audioFast)*(a>0?1-Math.exp(-a/r):0);let o=6.31*e.phase%1,n=.35*Math.sin(t*(.11+.08*(2.17*e.phase%1))+e.phase),d=e.audioFast,h=Math.sin(t*(.45+.2*o)+e.phase);Math.sign(h)!==e.oscSign&&(e.oscSign=Math.sign(h),e.flipQueued=!0),e.flipQueued&&d<.18&&(e.spinDir=-e.spinDir,e.flipQueued=!1);let u=.65*(.65+.7*o)*(1+n)+e.spinDir*d*2.2;e.spinVel+=(u-e.spinVel)*(a>0?1-Math.exp(-a/.35):0);let p=Math.max(0,d-e.prevA);e.prevA=d,e.spinVel+=e.spinDir*Math.min(6*p,1.4)*a*14,e.spin+=e.spinVel*a}class h{canvas;gl;ext;prog=null;ready=!1;uTime=null;uCanvas=null;instBuffer=null;data=new Float32Array(24576);constructor(e,t,a){this.canvas=e,this.gl=t,this.ext=a,this.init()}init(){let e=this.gl,t=o(e,e.VERTEX_SHADER,r),a=o(e,e.FRAGMENT_SHADER,s);if(!t||!a)return;let i=e.createProgram();if(!i)return;if(e.attachShader(i,t),e.attachShader(i,a),e.bindAttribLocation(i,0,"aPos"),e.bindAttribLocation(i,1,"aUV"),e.bindAttribLocation(i,2,"iPos"),e.bindAttribLocation(i,3,"iDyn"),e.bindAttribLocation(i,4,"iBg"),e.bindAttribLocation(i,5,"iAnc"),e.bindAttribLocation(i,6,"iC0b"),e.bindAttribLocation(i,7,"iC2"),e.linkProgram(i),e.deleteShader(t),e.deleteShader(a),!e.getProgramParameter(i,e.LINK_STATUS))return void console.error("[AgentOrb] instanced link failed:",e.getProgramInfoLog(i));this.prog=i,this.uTime=e.getUniformLocation(i,"uTime"),this.uCanvas=e.getUniformLocation(i,"uCanvas");let n=e.createBuffer();e.bindBuffer(e.ARRAY_BUFFER,n),e.bufferData(e.ARRAY_BUFFER,new Float32Array([-1,-1,0,1,1,-1,1,1,-1,1,0,0,1,1,1,0]),e.STATIC_DRAW),e.enableVertexAttribArray(0),e.vertexAttribPointer(0,2,e.FLOAT,!1,16,0),e.enableVertexAttribArray(1),e.vertexAttribPointer(1,2,e.FLOAT,!1,16,8),this.instBuffer=e.createBuffer(),e.bindBuffer(e.ARRAY_BUFFER,this.instBuffer),e.bufferData(e.ARRAY_BUFFER,this.data.byteLength,e.DYNAMIC_DRAW);for(let t=0;t<6;t++){let a=2+t;e.enableVertexAttribArray(a),e.vertexAttribPointer(a,4,e.FLOAT,!1,96,16*t),this.ext.vertexAttribDivisorANGLE(a,1)}e.enable(e.BLEND),e.blendFunc(e.ONE,e.ONE_MINUS_SRC_ALPHA),this.ready=!0}writeInstance(e,t,a,i,s){let r=24*e,o=this.data;o[r]=t,o[r+1]=a,o[r+2]=i,o[r+3]=s.spin,o[r+4]=s.audioSmooth,o[r+5]=s.phase,o[r+6]=s.arch,o[r+7]=0,o[r+8]=s.bg[0],o[r+9]=s.bg[1],o[r+10]=s.bg[2],o[r+11]=s.anchor[0],o[r+12]=s.anchor[1],o[r+13]=s.anchor[2],o[r+14]=s.accents[0][0],o[r+15]=s.accents[0][1],o[r+16]=s.accents[0][2],o[r+17]=s.accents[1][0],o[r+18]=s.accents[1][1],o[r+19]=s.accents[1][2],o[r+20]=s.accents[2][0],o[r+21]=s.accents[2][1],o[r+22]=s.accents[2][2],o[r+23]=0}renderGroup(e,t,a){if(!this.ready||!this.prog)return!1;let i=this.gl,s=Math.max(1,Math.floor(this.canvas.width/t)),r=Math.min(s*Math.max(1,Math.floor(this.canvas.height/t)),1024);i.useProgram(this.prog),i.uniform1f(this.uTime,a),i.uniform2f(this.uCanvas,this.canvas.width,this.canvas.height),i.viewport(0,0,this.canvas.width,this.canvas.height),i.bindBuffer(i.ARRAY_BUFFER,this.instBuffer);for(let o=0;o<e.length;o+=r){let n=Math.min(r,e.length-o);for(let i=0;i<n;i++){let r=e[o+i];d(r.spec,a);let n=i%s,l=Math.floor(i/s);this.writeInstance(i,n*t,l*t,t,r.spec)}i.bufferSubData(i.ARRAY_BUFFER,0,this.data.subarray(0,24*n)),i.clearColor(0,0,0,0),i.clear(i.COLOR_BUFFER_BIT),this.ext.drawArraysInstancedANGLE(i.TRIANGLE_STRIP,0,4,n);for(let a=0;a<n;a++){let i=e[o+a],r=a%s,n=Math.floor(a/s);i.ctx.drawImage(this.canvas,r*t,n*t,t,t,0,0,t,t)}}return!0}}e.s(["BATCH_MAX_PX",0,512,"FRAME_MS",0,1e3/60,"GL_CONTEXT_OPTS",0,{premultipliedAlpha:!0,alpha:!0,antialias:!0,preserveDrawingBuffer:!0},"MAX_DPR",0,2,"MAX_PX",0,1280,"OrbBatchRenderer",0,h,"OrbRenderer",0,class{gl;prog=null;u=null;ready=!1;canvas;constructor(e,t){this.canvas=e,this.gl=t,e.addEventListener("webglcontextlost",e=>{e.preventDefault(),this.ready=!1}),e.addEventListener("webglcontextrestored",()=>this.init()),this.init()}init(){let e=this.gl,a=o(e,e.VERTEX_SHADER,t),s=o(e,e.FRAGMENT_SHADER,i);if(!a||!s)return;let r=e.createProgram();if(!r||(e.attachShader(r,a),e.attachShader(r,s),e.bindAttribLocation(r,0,"aPos"),e.bindAttribLocation(r,1,"aUV"),e.linkProgram(r),e.deleteShader(a),e.deleteShader(s),!e.getProgramParameter(r,e.LINK_STATUS)))return;this.prog=r;let l={};for(let t of n)l[t]=e.getUniformLocation(r,t);this.u=l;let c=e.createBuffer();e.bindBuffer(e.ARRAY_BUFFER,c),e.bufferData(e.ARRAY_BUFFER,new Float32Array([-1,-1,0,1,1,-1,1,1,-1,1,0,0,1,1,1,0]),e.STATIC_DRAW),e.enableVertexAttribArray(0),e.vertexAttribPointer(0,2,e.FLOAT,!1,16,0),e.enableVertexAttribArray(1),e.vertexAttribPointer(1,2,e.FLOAT,!1,16,8),e.enable(e.BLEND),e.blendFunc(e.ONE,e.ONE_MINUS_SRC_ALPHA),e.enable(e.SCISSOR_TEST),this.ready=!0}render(e,t,a){if(!this.ready||!this.prog||!this.u)return!1;let i=this.gl;i.useProgram(this.prog);let s=this.canvas.height-t;i.viewport(0,s,t,t),i.scissor(0,s,t,t);let r=this.u;return i.uniform2f(r.uRes,t,t),i.uniform3f(r.uBg,e.bg[0],e.bg[1],e.bg[2]),i.uniform3f(r.uAnchor,e.anchor[0],e.anchor[1],e.anchor[2]),i.uniform3f(r.uC0,...e.accents[0]),i.uniform3f(r.uC1,...e.accents[1]),i.uniform3f(r.uC2,...e.accents[2]),i.uniform1f(r.uTime,a),i.uniform1f(r.uPhase,e.phase),i.uniform1f(r.uArch,e.arch),i.uniform1f(r.uLens,e.lens),d(e,a),i.uniform1f(r.uAudio,e.audioSmooth),i.uniform1f(r.uSpin,e.spin),i.clearColor(0,0,0,0),i.clear(i.COLOR_BUFFER_BIT),i.drawArrays(i.TRIANGLE_STRIP,0,4),!0}},"hashSeed",0,function(e){let t=0x811c9dc5;for(let a=0;a<e.length;a++)t^=e.charCodeAt(a),t=Math.imul(t,0x1000193);return t>>>0},"setCoreAudioLevel",0,function(e,t){void 0!==t?null===e?c.delete(t):c.set(t,Math.min(1,Math.max(0,e))):l=null===e?0:Math.min(1,Math.max(0,e))},"toRGB",0,e=>[parseInt(e.slice(1,3),16)/255,parseInt(e.slice(3,5),16)/255,parseInt(e.slice(5,7),16)/255]])},2818569,e=>{"use strict";var t=e.i(3583862),a=e.i(7276932),i=e.i(5804031),s=e.i(8408823),r=e.i(603814),o=e.i(7671246),n=e.i(4707837),l=e.i(7145562);e.i(1354374);var c=e.i(352006),d=e.i(458272),h=e.i(453762),u=e.i(422911),p=e.i(8481501),m=e.i(5838126),f=e.i(6778823),g=e.i(6547333),v=e.i(8842774),b=e.i(2928269),x=e.i(298683);function y(e){return"streaming"===e.state||"reconnecting"===e.state}function w(e){return e.sideBySideConfig}function k(e){return e?e.responseId:""}function _(e){return!!e?.responseId}function A(e){return e.isUnauthenticated}function S(e){return e.isRateLimited}e.s(["StreamingResponse",0,function(e){let C,R,I,L,E,P,N,T,j,B,F,M,z,D,U,O,G,V=(0,a.c)(83),{streamingResponses:H,usingExperiment:Y,onRetry:W,onResume:q,allowBreakout:X,responseFamily:K,onPivotResponse:J}=e,Q=void 0!==X&&X,$=(0,s.useLogEvent)(),{t:Z}=(0,c.useTranslation)("chat"),ee=(0,d.useChatPageStore)(S),et=(0,d.useChatPageStore)(A);V[0]!==H?(C=(0,n.first)(H),V[0]=H,V[1]=C):C=V[1];let ea=C;if(!ea)throw Error("No first response");let{sender:ei}=ea,es="human"===ei;V[2]!==ea.error||V[3]!==ea.state?(R="error"===ea.state&&ea.error?.includes("content-moderated"),V[2]=ea.error,V[3]=ea.state,V[4]=R):R=V[4];let er=R;V[5]!==$||V[6]!==H?(I=(e,t)=>{let a=H[0];if(!a)return;(0,h.handlePreferExperimentResponse)(t,a);let i=H.filter(_).map(k).filter(e=>e!==t.responseId);$("user_side_by_side_preference",t.responseId||"",{location:"streaming-response",index:e.toString(),nonPreferredResponseIds:i.join(","),preferredResponseId:t.responseId||"",conversationId:a.conversationId||""})},V[5]=$,V[6]=H,V[7]=I):I=V[7];let eo=I;V[8]!==$||V[9]!==H[0]?(L=()=>{let e=H[0];e&&((0,h.handlePreferExperimentResponse)(e,e),$("user_side_by_side_skip_clicked",e.responseId||"",{location:"streaming-response",conversationId:e.conversationId||""}))},V[8]=$,V[9]=H[0],V[10]=L):L=V[10];let en=L,el=(0,d.useChatPageStore)(w);V[11]!==ea.conversationId||V[12]!==ea.inflightResponseId?(E=()=>{let e=()=>{let e=ea?.inflightResponseId;"hidden"===document.visibilityState&&(0,r.logEventGlobal)("response_leave_while_streaming",e,{location:"streaming-response",conversationId:ea.conversationId||"",responseId:e||""})};return document.addEventListener("visibilitychange",e),()=>{document.removeEventListener("visibilitychange",e)}},V[11]=ea.conversationId,V[12]=ea.inflightResponseId,V[13]=E):E=V[13],V[14]!==ea?(P=[ea],V[14]=ea,V[15]=P):P=V[15],(0,l.useEffect)(E,P),V[16]!==H?(N=H.some(y),V[16]=H,V[17]=N):N=V[17];let ec=N;e:{let e;if(!K||!ea.responseId){T=-1;break e}if(V[18]!==ea.responseId||V[19]!==K){let t;V[21]!==ea.responseId?(t=e=>e.responseId===ea.responseId,V[21]=ea.responseId,V[22]=t):t=V[22],e=K.findIndex(t),V[18]=ea.responseId,V[19]=K,V[20]=e}else e=V[20];T=e}let ed=T,eh=K&&K.length>1;V[23]!==ea.message||V[24]!==ea.state||V[25]!==ea.streamErrors||V[26]!==ee||V[27]!==es?(j=!es&&(0,b.rateLimitedResponseKind)({isRateLimited:ee,state:ea.state,message:ea.message,streamErrors:ea.streamErrors}),V[23]=ea.message,V[24]=ea.state,V[25]=ea.streamErrors,V[26]=ee,V[27]=es,V[28]=j):j=V[28];let eu=j;if(Y){let e;return V[29]!==Q||V[30]!==eo||V[31]!==en||V[32]!==el||V[33]!==H?(e=(0,t.jsx)(h.Experiment,{responses:H,onPrefer:eo,allowBreakout:Q,sideBySideConfig:el,handleClickSkip:en}),V[29]=Q,V[30]=eo,V[31]=en,V[32]=el,V[33]=H,V[34]=e):e=V[34],e}if(eu){let e,a;return V[35]!==ea||V[36]!==eu?(e=(0,t.jsx)("div",{className:"flex -ml-5 mt-2 w-full",children:(0,t.jsx)(v.RateLimitedResponse,{kind:eu,response:ea})}),V[35]=ea,V[36]=eu,V[37]=e):e=V[37],V[38]!==es||V[39]!==e?(a=(0,t.jsx)(f.MessageRow,{isUser:es,children:e}),V[38]=es,V[39]=e,V[40]=a):a=V[40],a}return V[41]!==Q||V[42]!==ea||V[43]!==ec||V[44]!==er||V[45]!==q?(B=(0,t.jsx)(x.ResponseContent,{response:ea,isStreaming:ec,isModerated:er,onResume:q,allowBreakout:Q}),V[41]=Q,V[42]=ea,V[43]=ec,V[44]=er,V[45]=q,V[46]=B):B=V[46],V[47]!==es||V[48]!==B?(F=(0,t.jsx)(p.MessageBubble,{isUser:es,children:B}),V[47]=es,V[48]=B,V[49]=F):F=V[49],V[50]!==ea.conversationId||V[51]!==et||V[52]!==Z?(M=et&&(0,t.jsx)("div",{className:"flex -ml-5 mt-2 w-full",children:(0,t.jsx)(u.ErrorResponse,{title:Z("Unauthenticated.errorMessage","Unable to confirm user authenticity."),description:Z("Unauthenticated.description","Please log in or refresh the page"),conversationId:ea.conversationId})}),V[50]=ea.conversationId,V[51]=et,V[52]=Z,V[53]=M):M=V[53],V[54]!==ea.conversationId||V[55]!==ea.state||V[56]!==er||V[57]!==ee||V[58]!==et||V[59]!==W||V[60]!==Z?(z=!et&&!ee&&!er&&"error"===ea.state&&(0,t.jsx)("div",{className:"flex -ml-5 mt-2 w-full",children:(0,t.jsx)(u.ErrorResponse,{title:Z("Grok was unable to finish replying.errorMessage","Grok was unable to finish replying."),description:Z("Grok was unable to finish replying.description","Please try again later or use a different model."),onRetry:W,conversationId:ea.conversationId})}),V[54]=ea.conversationId,V[55]=ea.state,V[56]=er,V[57]=ee,V[58]=et,V[59]=W,V[60]=Z,V[61]=z):z=V[61],V[62]!==ea||V[63]!==W?(D="closed"===ea.state&&ea.streamErrors&&ea.streamErrors.length>0&&(0,t.jsx)("div",{className:"flex -ml-5 mt-2 w-full",children:(0,t.jsx)(m.StreamErrorResponse,{streamErrors:ea.streamErrors,cardAttachmentsJson:ea.cardAttachmentsJson,onRetry:W,response:ea})}),V[62]=ea,V[63]=W,V[64]=D):D=V[64],V[65]!==ea.conversationId||V[66]!==ea.responseId||V[67]!==eh||V[68]!==es||V[69]!==J||V[70]!==K||V[71]!==ed?(U=eh&&ed>-1&&(0,t.jsx)("div",{className:(0,o.cn)("flex items-center gap-[2px] w-max mt-1","rounded-lg text-xs","px-2",es?"end-4 -mr-2 justify-end":"start-0 @md/chat:start-3 -ml-4"),children:(0,t.jsx)(g.PivotNavigation,{responseFamily:K??[],responseIndex:ed,onPivotResponse:J,responseId:ea.responseId,conversationId:ea.conversationId,location:"streaming-response"})}),V[65]=ea.conversationId,V[66]=ea.responseId,V[67]=eh,V[68]=es,V[69]=J,V[70]=K,V[71]=ed,V[72]=U):U=V[72],V[73]!==es?(O=(0,t.jsx)(i.StickyActionButtonsContainer,{isUser:es}),V[73]=es,V[74]=O):O=V[74],V[75]!==es||V[76]!==F||V[77]!==M||V[78]!==z||V[79]!==D||V[80]!==U||V[81]!==O?(G=(0,t.jsxs)(f.MessageRow,{isUser:es,children:[F,M,z,D,U,O]}),V[75]=es,V[76]=F,V[77]=M,V[78]=z,V[79]=D,V[80]=U,V[81]=O,V[82]=G):G=V[82],G}])},3176409,6581526,e=>{"use strict";e.s(["GROK_BUILD_EMBEDDED_ANALYTICS",0,{impression:"grok_build_embedded_impression",commandCopied:"grok_build_embedded_command_copied"},"GROK_BUILD_EMBEDDED_LOCATION",0,"build-page","GROK_BUILD_MODAL_ANALYTICS",0,{impression:"grok_build_modal_impression",commandCopied:"grok_build_modal_command_copied",dismissed:"grok_build_modal_dismissed"},"GROK_BUILD_VIDEO_ANALYTICS",0,{opened:"grok_build_video_modal_opened"}],3176409);var t=e.i(3583862),a=e.i(7276932);e.i(379120);var i=e.i(8801135),s=e.i(8430260),r=e.i(2568609),o=e.i(534740),n=e.i(8408823),l=e.i(7671246);e.i(8416965);var c=e.i(6898338),d=e.i(4077349),h=e.i(3267683),u=e.i(7145562);e.i(1354374);var p=e.i(352006);let m={powershell:{label:"PowerShell",command:"irm https://x.ai/cli/install.ps1 | iex",prompt:null,body:"irm https://x.ai/cli/install.ps1",pipe:"| iex"},wsl:{label:"WSL",command:"curl -fsSL https://x.ai/cli/install.sh | bash",prompt:"$",body:"curl -fsSL https://x.ai/cli/install.sh",pipe:"| bash"}},f=["powershell","wsl"];function g(e){let i,s,r,o,n,l=(0,a.c)(16),{install:c,variant:d}=e,h=void 0===d?"terminal":d,u="callout"===h?"text-primary/40":void 0;l[0]!==h?(i="terminal"===h?{color:"var(--terminal-dimmer)"}:void 0,l[0]=h,l[1]=i):i=l[1];let p=i,m="callout"===h?"text-primary/50":void 0;l[2]!==h?(s="terminal"===h?{color:"var(--terminal-teal)"}:void 0,l[2]=h,l[3]=s):s=l[3];let f=s;return l[4]!==c.prompt||l[5]!==u||l[6]!==p?(r=c.prompt?(0,t.jsxs)("span",{className:u,style:p,children:[c.prompt," "]}):null,l[4]=c.prompt,l[5]=u,l[6]=p,l[7]=r):r=l[7],l[8]!==c.pipe||l[9]!==m||l[10]!==f?(o=(0,t.jsx)("span",{className:m,style:f,children:c.pipe}),l[8]=c.pipe,l[9]=m,l[10]=f,l[11]=o):o=l[11],l[12]!==c.body||l[13]!==r||l[14]!==o?(n=(0,t.jsxs)(t.Fragment,{children:[r,c.body," ",o]}),l[12]=c.body,l[13]=r,l[14]=o,l[15]=n):n=l[15],n}let v={default:{tabsHeight:"h-8",tabFont:"text-[11px] sm:text-xs",cmdHeight:"h-10",cmdFont:"text-xs",cmdPadX:"px-4",cmdLineHeight:"h-5",cmdLineSize:"leading-5",iconSize:"size-4",iconBoxSize:"size-5",hintFont:"text-xs"},large:{tabsHeight:"h-10",tabFont:"text-xs sm:text-sm",cmdHeight:"h-12",cmdFont:"text-xs sm:text-sm",cmdPadX:"px-5",cmdLineHeight:"h-5",cmdLineSize:"leading-5",iconSize:"size-[18px]",iconBoxSize:"size-6",hintFont:"text-sm"}};e.s(["GrokBuildInstallCommand",0,function(e){let b,x,y,w,k,_,A,S,C,R,I,L,E,P,N,T,j,B,F,M,z,D,U,O,G,V,H,Y,W,q,X=(0,a.c)(75),{location:K,copyEventName:J,size:Q,showHint:$}=e,Z=void 0===$||$,{t:ee}=(0,p.useTranslation)("chat"),et=(0,n.useLogEvent)(),{tier:ea}=(0,o.useGrokBuildInstallVisibility)(),{os:ei}=(0,c.useOs)(),es="windows"===ei,[er,eo]=(0,u.useState)("powershell"),en=es?er:"wsl",el=m[en],{copied:ec,copy:ed}=(0,r.useCopyToClipboard)(el.command),eh=v[void 0===Q?"default":Q];X[0]!==ed||X[1]!==J||X[2]!==en||X[3]!==K||X[4]!==et||X[5]!==ea?(b=e=>{e.stopPropagation(),ed(),et(J,"",{location:K,tier:ea??"unknown",install_platform:en})},X[0]=ed,X[1]=J,X[2]=en,X[3]=K,X[4]=et,X[5]=ea,X[6]=b):b=X[6];let eu=b;X[7]!==er||X[8]!==es||X[9]!==ee||X[10]!==eh.tabFont||X[11]!==eh.tabsHeight?(x=es&&(0,t.jsx)("div",{role:"radiogroup","aria-label":ee("grok-build-modal.install-platform","Install platform"),className:(0,l.cn)("inline-flex w-full items-center gap-0.5 rounded-xl","border border-border-l1 bg-surface-base p-0.5",eh.tabsHeight),children:f.map(e=>{let{label:a}=m[e],i=er===e;return(0,t.jsx)("button",{type:"button",role:"radio","aria-checked":i,onClick:()=>eo(e),className:(0,l.cn)("min-w-0 flex-1 rounded-lg px-2 py-1 font-medium","transition-colors select-none cursor-pointer","outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0",eh.tabFont,i?"bg-surface-l2 text-primary shadow":"text-secondary hover:text-primary"),children:a},e)})}),X[7]=er,X[8]=es,X[9]=ee,X[10]=eh.tabFont,X[11]=eh.tabsHeight,X[12]=x):x=X[12],X[13]!==eh.cmdHeight?(y=(0,l.cn)("cli-terminal-theme relative w-full min-w-0 rounded-xl",eh.cmdHeight),X[13]=eh.cmdHeight,X[14]=y):y=X[14],X[15]===Symbol.for("react.memo_cache_sentinel")?(w=(0,t.jsx)("div",{"aria-hidden":!0,className:"animate-border-beam pointer-events-none absolute -inset-px rounded-[inherit]",style:{background:"conic-gradient(from var(--angle), transparent 50%, var(--terminal-teal) 65%, color-mix(in oklch, var(--terminal-teal), white 30%) 75%, transparent 90%)"}}),X[15]=w):w=X[15],X[16]!==ee?(k=ee("grok-build-modal.copy-command","Copy install command"),X[16]=ee,X[17]=k):k=X[17],X[18]===Symbol.for("react.memo_cache_sentinel")?(_={background:"var(--terminal-bg)",color:"var(--terminal-fg)",transition:"border-color 150ms cubic-bezier(0.23, 1, 0.32, 1)"},X[18]=_):_=X[18],X[19]!==eh.cmdFont||X[20]!==eh.cmdPadX?(A=(0,l.cn)("group grid h-full w-full min-w-0 cursor-pointer","grid-cols-[minmax(0,1fr)_1.5rem] items-center gap-3","font-mono","border border-primary/[0.06] hover:border-primary/15","shadow-sm","rounded-xl","outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0",eh.cmdFont,eh.cmdPadX),X[19]=eh.cmdFont,X[20]=eh.cmdPadX,X[21]=A):A=X[21],X[22]!==eh.cmdLineHeight?(S=(0,l.cn)("relative min-w-0 overflow-hidden",eh.cmdLineHeight),X[22]=eh.cmdLineHeight,X[23]=S):S=X[23],X[24]!==eh.cmdLineSize?(C=(0,l.cn)("invisible block whitespace-nowrap",eh.cmdLineSize),X[24]=eh.cmdLineSize,X[25]=C):C=X[25],X[26]===Symbol.for("react.memo_cache_sentinel")?(R={scrollbarWidth:"none"},I=(0,t.jsx)(g,{install:m.wsl}),X[26]=R,X[27]=I):(R=X[26],I=X[27]),X[28]!==C?(L=(0,t.jsx)("code",{"aria-hidden":!0,className:C,style:R,children:I}),X[28]=C,X[29]=L):L=X[29],X[30]!==eh.cmdLineSize?(E=(0,l.cn)("absolute inset-0 overflow-x-auto whitespace-nowrap text-left",eh.cmdLineSize),X[30]=eh.cmdLineSize,X[31]=E):E=X[31],X[32]===Symbol.for("react.memo_cache_sentinel")?(P={scrollbarWidth:"none"},X[32]=P):P=X[32],X[33]!==el?(N=(0,t.jsx)(g,{install:el}),X[33]=el,X[34]=N):N=X[34],X[35]!==E||X[36]!==N?(T=(0,t.jsx)("code",{className:E,style:P,children:N}),X[35]=E,X[36]=N,X[37]=T):T=X[37],X[38]!==S||X[39]!==L||X[40]!==T?(j=(0,t.jsxs)("div",{className:S,children:[L,T]}),X[38]=S,X[39]=L,X[40]=T,X[41]=j):j=X[41],X[42]!==eh.iconBoxSize?(B=(0,l.cn)("relative flex shrink-0 items-center justify-center",eh.iconBoxSize),X[42]=eh.iconBoxSize,X[43]=B):B=X[43],X[44]===Symbol.for("react.memo_cache_sentinel")?(F={color:"var(--terminal-dim)"},X[44]=F):F=X[44];let ep=ec?"check":"copy";return X[45]===Symbol.for("react.memo_cache_sentinel")?(M={opacity:0,scale:.85,filter:"blur(3px)"},z={opacity:1,scale:1,filter:"blur(0px)"},D={opacity:0,scale:.85,filter:"blur(3px)"},X[45]=M,X[46]=z,X[47]=D):(M=X[45],z=X[46],D=X[47]),X[48]===Symbol.for("react.memo_cache_sentinel")?(U={duration:.2,ease:[.23,1,.32,1]},X[48]=U):U=X[48],X[49]!==ec||X[50]!==eh.iconSize?(O=ec?(0,t.jsx)(i.CheckIcon,{className:eh.iconSize,style:{color:"var(--terminal-teal)"}}):(0,t.jsx)(s.CopyIcon,{className:eh.iconSize}),X[49]=ec,X[50]=eh.iconSize,X[51]=O):O=X[51],X[52]!==ep||X[53]!==O?(G=(0,t.jsx)(d.AnimatePresence,{initial:!1,mode:"popLayout",children:(0,t.jsx)(h.motion.span,{initial:M,animate:z,exit:D,transition:U,className:"absolute inset-0 flex items-center justify-center",children:O},ep)}),X[52]=ep,X[53]=O,X[54]=G):G=X[54],X[55]!==B||X[56]!==G?(V=(0,t.jsx)("div",{className:B,style:F,children:G}),X[55]=B,X[56]=G,X[57]=V):V=X[57],X[58]!==eu||X[59]!==j||X[60]!==V||X[61]!==k||X[62]!==A?(H=(0,t.jsx)("div",{className:"relative h-full",children:(0,t.jsxs)("button",{type:"button",onClick:eu,"aria-label":k,style:_,className:A,children:[j,V]})}),X[58]=eu,X[59]=j,X[60]=V,X[61]=k,X[62]=A,X[63]=H):H=X[63],X[64]!==H||X[65]!==y?(Y=(0,t.jsxs)("div",{className:y,children:[w,H]}),X[64]=H,X[65]=y,X[66]=Y):Y=X[66],X[67]!==Z||X[68]!==ee||X[69]!==eh.hintFont?(W=Z&&(0,t.jsx)("p",{className:(0,l.cn)("text-fg-tertiary text-center",eh.hintFont),children:ee("grok-build-modal.install-hint","Copy and paste into terminal to try")}),X[67]=Z,X[68]=ee,X[69]=eh.hintFont,X[70]=W):W=X[70],X[71]!==Y||X[72]!==W||X[73]!==x?(q=(0,t.jsxs)("div",{className:"flex w-full min-w-0 flex-col gap-2",children:[x,Y,W]}),X[71]=Y,X[72]=W,X[73]=x,X[74]=q):q=X[74],q}],6581526)},7948860,e=>{"use strict";var t=e.i(3583862),a=e.i(7276932),i=e.i(8408823),s=e.i(419746),r=e.i(507703),o=e.i(7145562),n=e.i(458272),l=e.i(453762),c=e.i(4011825),d=e.i(7678350);function h(e){return e.sideBySideConfig}let u=(0,o.memo)(function(e){let s,o,c,d,u,p,m=(0,a.c)(29),{convId:f,childIds:g}=e,v=(0,i.useLogEvent)(),b=(0,n.useChatPageStore)(h),x=g[0],y=g[1];m[0]!==f||m[1]!==x?(s=e=>void 0!==x?e.conversations[f]?.nodes[x]:void 0,m[0]=f,m[1]=x,m[2]=s):s=m[2];let w=(0,r.useMessageStore)(s);m[3]!==f||m[4]!==y?(o=e=>void 0!==y?e.conversations[f]?.nodes[y]:void 0,m[3]=f,m[4]=y,m[5]=o):o=m[5];let k=(0,r.useMessageStore)(o);if(m[6]!==f||m[7]!==k||m[8]!==w){if(c=[],w){let e;m[10]!==f||m[11]!==w?(e=(0,r.nodeToResponse)(f,w),m[10]=f,m[11]=w,m[12]=e):e=m[12],c.push(e)}if(k){let e;m[13]!==f||m[14]!==k?(e=(0,r.nodeToResponse)(f,k),m[13]=f,m[14]=k,m[15]=e):e=m[15],c.push(e)}m[6]=f,m[7]=k,m[8]=w,m[9]=c}else c=m[9];let _=c;m[16]!==g||m[17]!==f||m[18]!==v?(d=(e,t)=>{let a=t.responseId;a&&(v("user_side_by_side_preference",a,{location:"gateway-messages",index:e.toString(),nonPreferredResponseIds:g.filter(e=>e!==a).join(","),preferredResponseId:a,conversationId:f}),r.useMessageStore.getState().preferResponse({convId:f,preferredNodeId:a}))},m[16]=g,m[17]=f,m[18]=v,m[19]=d):d=m[19];let A=d;m[20]!==g[0]||m[21]!==f||m[22]!==v?(u=()=>{v("user_side_by_side_skip_clicked",g[0]??"",{location:"gateway-messages",conversationId:f}),r.useMessageStore.getState().skipExperiment({convId:f})},m[20]=g[0],m[21]=f,m[22]=v,m[23]=u):u=m[23];let S=u;return _.length<2?null:(m[24]!==A||m[25]!==S||m[26]!==_||m[27]!==b?(p=(0,t.jsx)(l.Experiment,{responses:_,onPrefer:A,allowBreakout:!0,sideBySideConfig:b,handleClickSkip:S}),m[24]=A,m[25]=S,m[26]=_,m[27]=b,m[28]=p):p=m[28],p)});function p(e){return{responseId:e}}let m=(0,o.memo)(function(e){let i,s,o,n,l,d,h=(0,a.c)(25),{convId:u,isLastResponse:m,nodeId:f,task:g,emailContext:v,onEdit:b,onPivot:x}=e;h[0]!==u||h[1]!==f?(i=e=>e.conversations[u]?.nodes[f],h[0]=u,h[1]=f,h[2]=i):i=h[2];let y=(0,r.useMessageStore)(i);h[3]!==u||h[4]!==f?(s=e=>{let t=e.conversations[u],a=t?.nodes[f];if(t&&a)return null===a.parentId?t.rootChildIds:t.nodes[a.parentId]?.childIds??t.rootChildIds},h[3]=u,h[4]=f,h[5]=s):s=h[5];let w=(0,r.useMessageStore)(s),k=y?.parentId??null;h[6]!==w||h[7]!==f?(o=w&&w.length>1?w.map(p):[{responseId:f}],h[6]=w,h[7]=f,h[8]=o):o=h[8];let _=o;h[9]!==u||h[10]!==y?(n=y?(0,r.nodeToResponse)(u,y):void 0,h[9]=u,h[10]=y,h[11]=n):n=h[11];let A=n;h[12]!==x||h[13]!==k?(l=e=>x?.(e,k??void 0),h[12]=x,h[13]=k,h[14]=l):l=h[14];let S=l;if(!A)return null;let C=!!g;return h[15]!==v||h[16]!==S||h[17]!==m||h[18]!==f||h[19]!==b||h[20]!==A||h[21]!==_||h[22]!==C||h[23]!==g?(d=(0,t.jsx)(c.ResponseFamily,{responseFamily:_,selectedId:f,response:A,queryBarHeight:0,isLastResponse:m,readOnly:C,task:g,emailContext:v,allowBreakout:!0,onEdit:b,onPivotResponse:S}),h[15]=v,h[16]=S,h[17]=m,h[18]=f,h[19]=b,h[20]=A,h[21]=_,h[22]=C,h[23]=g,h[24]=d):d=h[24],d});e.s(["GatewayMessages",0,function(e){let i,n,l,c,h,p,f,g,v=(0,a.c)(28),{conversationId:b,startIndex:x,endIndex:y,firstItemRef:w}=e;v[0]!==b?(i=e=>e.conversations[b],v[0]=b,v[1]=i):i=v[1];let k=(0,r.useMessageStore)(i);v[2]!==b?(n=e=>e.viewStateById[b]?.selectedBranchByParent,v[2]=b,v[3]=n):n=v[3];let _=(0,s.useConversationStore)(n);v[4]!==_||v[5]!==k?(l=k?(0,d.buildGatewaySelectedPath)(k,_??d.EMPTY_GATEWAY_SELECTION):[],v[4]=_,v[5]=k,v[6]=l):l=v[6];let A=l,S=x??0;v[7]!==S||v[8]!==y||v[9]!==A?(c=A.slice(S,y),v[7]=S,v[8]=y,v[9]=A,v[10]=c):c=v[10];let C=c;v[11]!==b?(h=e=>{let{responseId:t,message:a,fileAttachmentIds:i,parentQuotedText:s,parentQuoteSource:o}=e;r.useMessageStore.getState().editMessage({convId:b,nodeId:t,text:a,fileAttachmentIds:i,parentQuotedText:s,parentQuoteSource:o})},v[11]=b,v[12]=h):h=v[12];let R=h;v[13]!==b?(p=(e,t)=>{if(void 0===e)return;let a=t??d.GATEWAY_ROOT_KEY;s.useConversationStore.getState().setSelectedBranch(b,a,e);let i=r.useMessageStore.getState(),o=i.conversations[b]?.nodes[e];o?.status==="unloaded"&&i.loadBranch({convId:b,ancestorId:t??null,leafId:e})},v[13]=b,v[14]=p):p=v[14];let I=p,L=k?.activeSbs;return v[15]!==L||v[16]!==S||v[17]!==b||v[18]!==w||v[19]!==R||v[20]!==I||v[21]!==A.length||v[22]!==k?.emailContext||v[23]!==k?.task||v[24]!==C?(f=C.map((e,a)=>{let i=S+a,s=L?.childIds.includes(e)?L:void 0,r=s?`sbs-${s.parentId??d.GATEWAY_ROOT_KEY}`:e,n=s?(0,t.jsx)(u,{convId:b,childIds:s.childIds}):(0,t.jsx)(m,{convId:b,nodeId:e,isLastResponse:i===A.length-1,task:0===i?k?.task:void 0,emailContext:0===i?k?.emailContext:void 0,onEdit:R,onPivot:I});return w&&0===a?(0,t.jsx)("div",{ref:w,className:"flex w-full flex-col items-center",children:n},r):(0,t.jsx)(o.Fragment,{children:n},r)}),v[15]=L,v[16]=S,v[17]=b,v[18]=w,v[19]=R,v[20]=I,v[21]=A.length,v[22]=k?.emailContext,v[23]=k?.task,v[24]=C,v[25]=f):f=v[25],v[26]!==f?(g=(0,t.jsx)(t.Fragment,{children:f}),v[26]=f,v[27]=g):g=v[27],g}])},8779902,e=>{"use strict";var t=e.i(4869975),a=e.i(8157878),i=e.i(6427542);e.i(7134378);var s=e.i(8647679);let r=new Map;e.s(["openRemixedConversation",0,function(e,o,n){let l=e.conversation,c=l?.conversationId;if(!l||!c)throw Error("missing conversation in remix response");if((0,a.seedClonedProjectConversation)(l),s.useModesStore.getState().setSelectedModeId(i.MODEL_MODE.Build),s.useModesStore.getState().selectedModeId!==i.MODEL_MODE.Build)throw Error("build mode unavailable for remixed conversation");(0,t.markBuildConversation)(c),r.set(c,{appTitle:(l.title??"").trim(),bodyOverride:n.trim()}),o(`/c/${c}`)},"takePendingRemixWelcome",0,function(e){let t=r.get(e);if(void 0!==t)return r.delete(e),t}])},6659400,e=>{"use strict";let t=function(e,t){for(var a,i=-1,s=e.length;++i<s;){var r=t(e[i]);void 0!==r&&(a=void 0===a?r:a+r)}return a};var a=0/0;let i=function(e,i){var s=null==e?0:e.length;return s?t(e,i)/s:a};var s=e.i(984290);e.s(["mean",0,function(e){return i(e,s.default)}],6659400)},111204,e=>{"use strict";var t=e.i(699168);e.s(["loadKatexExtensions",0,function(){return Promise.allSettled([(0,t.load)("katex/contrib/mhchem"),(0,t.load)("katex/contrib/copy-tex")])}])},1681060,e=>{"use strict";e.s(["FREEFORM_ANSWER_VALUE",0,"Other"])}]);
+
+//# debugId=6b43441d-0c7d-d8a8-6d26-e4cd123ff0d2

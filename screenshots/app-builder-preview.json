@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "帧索 FrameSeek",
+      "hasCanvas": false,
+      "bodyTextLen": 290,
+      "bodyTextHash": "1958f671c273d1299dc8da204b912004aba2b0c9c07612df2d3191a3d6e85992",
+      "bodyTextPrefix": "帧索 FRAMESEEK 检索 片库 接入 流水线 模型 工作流 Qwen3-VL-Emb 8B 中文帧检索工作台 CHINES",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "帧索 FrameSeek",
+      "hasCanvas": false,
+      "bodyTextLen": 261,
+      "bodyTextHash": "1ed3d9881986ed98ddabc0902f482922cb31bc8e43963b9a593e09758ae6980c",
+      "bodyTextPrefix": "帧索 FRAMESEEK CHINESE FRAME RETRIEVAL 用一句话找到镜头 中文自然语言检索视频帧。多视图索引覆",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

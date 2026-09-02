@@ -1,0 +1,11 @@
+node_modules/
+.vercel/
+.tanstack/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example

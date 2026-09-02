@@ -1,0 +1,4 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="74b11466-04e9-2214-7db5-f522b9d6a5d5")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,5028861,(t,i,o)=>{i.exports={"drawer-title":"通知","notifications.action.wants-to-view":"想要查看你的对话","notifications.bell-button.label":"打开通知","notifications.empty":"尚无通知","notifications.error":"加载通知失败","notifications.group.earlier":"更早的","notifications.group.today":"今日","notifications.group.yesterday":"昨日","notifications.ignore-button":"忽略","notifications.retry":"重试","notifications.share-button":"共享"}}]);
+
+//# debugId=74b11466-04e9-2214-7db5-f522b9d6a5d5

@@ -1,0 +1,4 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="104a2182-0b33-4a8e-3b5f-f980b0f56d35")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,48055,(t,o,i)=>{o.exports={"drawer-title":"Notifications","notifications.action.wants-to-view":"Wants to view your conversation","notifications.bell-button.label":"Open notifications","notifications.empty":"No notifications yet","notifications.error":"Failed to load notifications","notifications.group.earlier":"Earlier","notifications.group.today":"Today","notifications.group.yesterday":"Yesterday","notifications.ignore-button":"Ignore","notifications.retry":"Retry","notifications.share-button":"Share"}}]);
+
+//# debugId=104a2182-0b33-4a8e-3b5f-f980b0f56d35
