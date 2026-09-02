@@ -8,6 +8,28 @@ const modelServerCode = fs.readFileSync(modelServerPath, "utf-8");
 const nbRaw = fs.readFileSync(notebookPath, "utf-8");
 const nb = JSON.parse(nbRaw);
 
+const cell3Source = [
+  "# 3. 克隆或拉取 GitHub 仓库最新代码 (强制重置同步，避免本地文件冲突)\n",
+  "import os\n",
+  "import sys\n",
+  "\n",
+  'REPO_URL = "https://github.com/bycainiu/zhensuo.git"\n',
+  'WORK_DIR = "/content/zhensuo"\n',
+  "\n",
+  'if os.path.exists(WORK_DIR) and os.path.exists(os.path.join(WORK_DIR, ".git")):\n',
+  '    print("🔄 检测到已存在项目目录，正在强制同步最新代码 (自动重置覆盖本地缓存)...")\n',
+  "    !cd {WORK_DIR} && git fetch origin main && git reset --hard origin/main && git clean -fd\n",
+  "else:\n",
+  '    print(f"📦 正在克隆 GitHub 仓库: {REPO_URL}...")\n',
+  "    !rm -rf {WORK_DIR}\n",
+  "    !git clone {REPO_URL} {WORK_DIR}\n",
+  "\n",
+  "if WORK_DIR not in sys.path:\n",
+  "    sys.path.insert(0, WORK_DIR)\n",
+  "\n",
+  'print(f"✅ 项目工作区就绪: {WORK_DIR}")'
+];
+
 const cell6Source = [
   "# 6. 编写并启动真实加载 GPU 神经网络显存与多模态图文视觉嵌入的 model_server.py\n",
   "import os\n",
@@ -58,22 +80,20 @@ const cell6Source = [
   "        print(f.read())\n"
 ];
 
-let matched = false;
 for (const cell of nb.cells) {
   if (cell.cell_type === "code") {
     const sourceStr = (cell.source || []).join("");
+    if (sourceStr.includes("REPO_URL") || sourceStr.includes("WORK_DIR")) {
+      cell.source = cell3Source;
+      cell.outputs = [];
+      console.log("✅ 成功优化 Step 3 代码拉取单元！");
+    }
     if (sourceStr.includes("MODEL_SERVER_CODE") || sourceStr.includes("model_server.py")) {
       cell.source = cell6Source;
-      matched = true;
       console.log("✅ 成功匹配并更新 Step 6 启动 Cell！");
-      break;
     }
   }
 }
 
-if (matched) {
-  fs.writeFileSync(notebookPath, JSON.stringify(nb, null, 1), "utf-8");
-  console.log("🎉 colab/frameseek_colab_runner.ipynb 同步写入完成！");
-} else {
-  console.error("❌ 未找到 Step 6 代码单元");
-}
+fs.writeFileSync(notebookPath, JSON.stringify(nb, null, 1), "utf-8");
+console.log("🎉 colab/frameseek_colab_runner.ipynb 同步写入完成！");
