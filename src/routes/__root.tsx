@@ -1,10 +1,12 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { AppShell } from "@/components/layout/app-shell";
 import { Toaster } from "sonner";
+import { restore115Session } from "@/lib/server/fns";
+import type { Pan115User } from "@/lib/types";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "帧索 FrameSeek";
@@ -36,6 +38,22 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedUserStr = localStorage.getItem("frameseek_115_user");
+      const savedCookie = localStorage.getItem("frameseek_pan115_cookie") || "";
+      let user: Pan115User | undefined = undefined;
+      if (savedUserStr) {
+        try {
+          user = JSON.parse(savedUserStr) as Pan115User;
+        } catch {}
+      }
+      if (user || savedCookie) {
+        void restore115Session({ data: { user, cookie: savedCookie } });
+      }
+    }
+  }, []);
   return (
     <html lang="zh-CN" className="antialiased" suppressHydrationWarning>
       <head>

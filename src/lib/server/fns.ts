@@ -144,42 +144,31 @@ export const listVideos = createServerFn({ method: "GET" })
       meta: unknown;
     }>`select id, title, filename, duration_sec, poster_url, status, path, source_id, frame_count, vector_count, size_mb, pick_code, meta from videos order by indexed_at desc nulls last, id desc`;
 
-    const FALLBACKS = [
-      "/stills/jacket-phone.jpg",
-      "/stills/rain-run.jpg",
-      "/stills/basketball.jpg",
-      "/stills/chef.jpg",
-      "/stills/doctor.jpg",
-      "/stills/forklift.jpg",
-      "/stills/red-dress.jpg",
-      "/stills/office.jpg",
-      "/stills/studio.jpg",
-    ];
-
     return Promise.all(
-      rows.map(async (row, idx): Promise<VideoCard> => {
+      rows.map(async (row): Promise<VideoCard> => {
         let poster = row.poster_url;
         const meta = asJson<{ pickCode?: string }>(row.meta, {});
         const pc = row.pick_code || meta.pickCode || row.id.replace("vid_115_", "");
+        const cat = VIDEOS.find((v) => v.id === row.id);
 
-        // 若当前海报非真实图片 (例如旧 SVG 占位图)，尝试拉取真实封面或使用片库原画
-        if (!poster || poster.startsWith("data:image/svg")) {
-          const cat = VIDEOS.find((v) => v.id === row.id);
-          if (cat?.poster) {
+        if (cat) {
+          // 预置演示视频
+          if (!poster || poster.startsWith("data:image/svg")) {
             poster = cat.poster;
             await sql`update videos set poster_url = ${poster} where id = ${row.id}`;
-          } else if (pc && activeCookie) {
-            try {
-              const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
-              if (realImg) {
-                poster = realImg;
-                await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
-              }
-            } catch {}
           }
-          if (!poster || poster.startsWith("data:image/svg")) {
-            poster = FALLBACKS[idx % FALLBACKS.length]!;
-            await sql`update videos set poster_url = ${poster} where id = ${row.id}`;
+        } else {
+          // 115 网盘素材：拉取真实 115 图片，绝不使用演示图
+          if (!poster || poster.startsWith("data:image/svg") || poster.startsWith("/stills/")) {
+            if (pc && activeCookie) {
+              try {
+                const realImg = await fetch115ImageAsDataUri(activeCookie, pc);
+                if (realImg) {
+                  poster = realImg;
+                  await sql`update videos set poster_url = ${realImg} where id = ${row.id}`;
+                }
+              } catch {}
+            }
           }
         }
 
@@ -248,25 +237,25 @@ export const getVideo = createServerFn({ method: "POST" })
     let poster = video.poster_url;
     let realFramesList: string[] = [];
 
-    // 尝试直接向 115 官方拉取真实多时间戳视频帧
-    if (pc && activeCookie) {
-      try {
-        const real115 = await fetch115VideoRealFrames(activeCookie, pc);
-        if (real115.poster) {
-          poster = real115.poster;
-          await sql`update videos set poster_url = ${real115.poster} where id = ${video.id}`;
-        }
-        if (real115.frames.length > 0) {
-          realFramesList = real115.frames;
-        }
-      } catch {
-        // ignore
+    if (cat) {
+      if (!poster || poster.startsWith("data:image/svg")) {
+        poster = cat.poster;
+        await sql`update videos set poster_url = ${poster} where id = ${video.id}`;
       }
-    }
-
-    if (!poster || poster.startsWith("data:image/svg")) {
-      poster = cat?.poster || "/stills/jacket-phone.jpg";
-      await sql`update videos set poster_url = ${poster} where id = ${video.id}`;
+    } else {
+      // 115 导入视频：拉取真实 115 快照
+      if (pc && activeCookie) {
+        try {
+          const real115 = await fetch115VideoRealFrames(activeCookie, pc);
+          if (real115.poster) {
+            poster = real115.poster;
+            await sql`update videos set poster_url = ${real115.poster} where id = ${video.id}`;
+          }
+          if (real115.frames.length > 0) {
+            realFramesList = real115.frames;
+          }
+        } catch {}
+      }
     }
 
     const frames = await sql<{
@@ -283,13 +272,18 @@ export const getVideo = createServerFn({ method: "POST" })
       if (realFramesList[idx]) {
         f.still_url = realFramesList[idx]!;
         await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
-      } else if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
-        const catStill = cat?.frames[idx]?.still || poster;
-        f.still_url = catStill;
-        await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
+      } else if (cat) {
+        if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
+          f.still_url = cat.frames[idx]?.still || cat.poster;
+          await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
+        }
+      } else if (poster && !poster.startsWith("/stills/") && !poster.startsWith("data:image/svg")) {
+        if (!f.still_url || f.still_url.startsWith("data:image/svg") || f.still_url.startsWith("/stills/")) {
+          f.still_url = poster;
+          await sql`update frames set still_url = ${f.still_url} where id = ${f.id}`;
+        }
       }
     }
-
 
     const regions = await sql<{
       id: string;
@@ -1673,16 +1667,21 @@ export const getColabSettings = createServerFn({ method: "GET" }).handler(async 
  * 客户端本地持久化凭证同步恢复
  */
 export const restore115Session = createServerFn({ method: "POST" })
-  .validator((input: { user: Pan115User; cookie?: string }) => input)
+  .validator((input: { user?: Pan115User | null; cookie?: string }) => input)
   .handler(async ({ data }) => {
     await seedIfEmpty();
     const sql = await getSql();
-    await sql`
-      update sources
-      set status = 'connected',
-          config = ${JSON.stringify({ user: data.user, cookie: data.cookie })}::jsonb
-      where id = 'src_115_qr'
-    `;
+    const activeCookie = data.cookie?.trim();
+    if (activeCookie) setGlobal115Cookie(activeCookie);
+
+    if (data.user || activeCookie) {
+      await sql`
+        update sources
+        set status = 'connected',
+            config = ${JSON.stringify({ user: data.user, cookie: activeCookie })}::jsonb
+        where id in ('src_115_qr', 'src_115_cookie')
+      `;
+    }
     return { ok: true };
   });
 

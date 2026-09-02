@@ -334,7 +334,41 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
   if (urlOrPickcode.startsWith("http://") || urlOrPickcode.startsWith("https://")) {
     directUrls.push(urlOrPickcode);
   } else {
-    // 1. 请求 files/image 官方接口
+    // 1. 官方专用转码与缩略图加载服务器 (最直接最快)
+    directUrls.push(`https://imgload.115.com/?pickcode=${urlOrPickcode}&type=thumb`);
+    directUrls.push(`https://imgload.115.com/?pickcode=${urlOrPickcode}&type=snap`);
+    directUrls.push(`https://imgload.115.com/?pickcode=${urlOrPickcode}&type=cover`);
+    directUrls.push(`https://imgload.115.com/?pickcode=${urlOrPickcode}`);
+    directUrls.push(`https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`);
+
+    // 2. 请求 files/video 官方接口获取转码封面与快照直链
+    try {
+      const vidApi = `${PAN115_ENDPOINTS.videoInfo}?pickcode=${urlOrPickcode}`;
+      const r = await fetch(vidApi, {
+        headers: {
+          Cookie: activeCookie,
+          Referer: "https://115.com/",
+          Origin: "https://115.com",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (r.ok) {
+        const j = (await r.json()) as { data?: { thumb_url?: string; snap_url?: string; cover_url?: string; thumb?: string; snap?: string } };
+        if (j.data) {
+          if (j.data.thumb_url) directUrls.unshift(j.data.thumb_url);
+          if (j.data.snap_url) directUrls.unshift(j.data.snap_url);
+          if (j.data.cover_url) directUrls.unshift(j.data.cover_url);
+          if (j.data.thumb) directUrls.unshift(j.data.thumb);
+          if (j.data.snap) directUrls.unshift(j.data.snap);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. 请求 files/image 官方接口
     try {
       const imgApi = `${PAN115_ENDPOINTS.imageInfo}?pickcode=${urlOrPickcode}`;
       const r = await fetch(imgApi, {
@@ -358,37 +392,9 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
     } catch {
       // ignore
     }
-
-    // 2. 请求 files/video 官方接口获取转码封面与快照直链
-    try {
-      const vidApi = `${PAN115_ENDPOINTS.videoInfo}?pickcode=${urlOrPickcode}`;
-      const r = await fetch(vidApi, {
-        headers: {
-          Cookie: activeCookie,
-          Referer: "https://115.com/",
-          Origin: "https://115.com",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-        },
-        signal: AbortSignal.timeout(4000),
-      });
-      if (r.ok) {
-        const j = (await r.json()) as { data?: { thumb_url?: string; snap_url?: string; cover_url?: string } };
-        if (j.data) {
-          if (j.data.thumb_url) directUrls.push(j.data.thumb_url);
-          if (j.data.snap_url) directUrls.push(j.data.snap_url);
-          if (j.data.cover_url) directUrls.push(j.data.cover_url);
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    // 3. 官方图片服务器直链
-    directUrls.push(`https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`);
   }
 
-  // 抓取图片二进制数据 (执行手动 302 重定向跟踪并保持 Cookie 与 Referer)
+  // 抓取图片二进制数据 (执行 302 重定向跟踪并保持 Cookie 与 Referer)
   for (const rawUrl of directUrls) {
     let curUrl = rawUrl;
     for (let hop = 0; hop < 5; hop++) {

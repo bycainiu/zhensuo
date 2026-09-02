@@ -178,22 +178,25 @@ async function repairSvgPlaceholders() {
 
     let newPoster = sv.poster_url;
 
-    // 若当前海报为 SVG 占位图
-    if (!newPoster || newPoster.startsWith("data:image/svg")) {
-      if (cat?.poster) {
-        newPoster = cat.poster;
-      } else if (cookie && pc) {
-        try {
-          const real115 = await fetch115VideoRealFrames(cookie, pc);
-          if (real115.poster) newPoster = real115.poster;
-        } catch {}
-      }
-
+    if (cat) {
+      // 预置演示成片
       if (!newPoster || newPoster.startsWith("data:image/svg")) {
-        newPoster = FALLBACK_STILLS[i % FALLBACK_STILLS.length]!;
+        newPoster = cat.poster;
+        await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
       }
-
-      await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
+    } else {
+      // 115 导入视频：必须抓取真实网盘画面，绝不覆盖为演示素材图
+      if (!newPoster || newPoster.startsWith("data:image/svg") || newPoster.startsWith("/stills/")) {
+        if (cookie && pc) {
+          try {
+            const real115 = await fetch115VideoRealFrames(cookie, pc);
+            if (real115.poster) {
+              newPoster = real115.poster;
+              await sql`update videos set poster_url = ${newPoster} where id = ${sv.id}`;
+            }
+          } catch {}
+        }
+      }
     }
 
     // 修复采样帧
@@ -203,10 +206,16 @@ async function repairSvgPlaceholders() {
 
     for (let fIdx = 0; fIdx < frames.length; fIdx++) {
       const f = frames[fIdx]!;
-      if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
-        const catFrame = cat?.frames[fIdx];
-        const newStill = catFrame?.still || newPoster;
-        await sql`update frames set still_url = ${newStill} where id = ${f.id}`;
+      if (cat) {
+        if (!f.still_url || f.still_url.startsWith("data:image/svg")) {
+          const catFrame = cat.frames[fIdx];
+          const newStill = catFrame?.still || newPoster;
+          await sql`update frames set still_url = ${newStill} where id = ${f.id}`;
+        }
+      } else if (newPoster && !newPoster.startsWith("/stills/") && !newPoster.startsWith("data:image/svg")) {
+        if (!f.still_url || f.still_url.startsWith("data:image/svg") || f.still_url.startsWith("/stills/")) {
+          await sql`update frames set still_url = ${newPoster} where id = ${f.id}`;
+        }
       }
     }
   }
