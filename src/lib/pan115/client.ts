@@ -26,6 +26,7 @@ export const PAN115_ENDPOINTS = {
   userCard: "https://webapi.115.com/user/card",
   listFiles: "https://webapi.115.com/files",
   videoInfo: "https://webapi.115.com/files/video",
+  imageInfo: "https://webapi.115.com/files/image",
   storyboard: "https://webapi.115.com/files/storyboard",
   openApi: "https://proapi.115.com",
   openAuth: "https://passportapi.115.com/open/authorize",
@@ -329,47 +330,112 @@ export async function fetch115ImageAsDataUri(cookie: string, urlOrPickcode: stri
   if (!urlOrPickcode) return null;
   const activeCookie = cookie?.trim() || getGlobal115Cookie();
 
-  const candidateUrls: string[] = [];
-  if (urlOrPickcode.startsWith("http")) {
-    candidateUrls.push(urlOrPickcode);
+  const directUrls: string[] = [];
+  if (urlOrPickcode.startsWith("http://") || urlOrPickcode.startsWith("https://")) {
+    directUrls.push(urlOrPickcode);
   } else {
-    candidateUrls.push(
-      `https://imgload.115.com/?pickcode=${urlOrPickcode}&type=thumb`,
-      `https://imgload.115.com/?pickcode=${urlOrPickcode}&type=snap`,
-      `https://v.anxia.com/?pickcode=${urlOrPickcode}&format=jpg`,
-      `https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`,
-      `https://webapi.115.com/files/image?pickcode=${urlOrPickcode}`,
-    );
-  }
-
-  for (const targetUrl of candidateUrls) {
+    // 1. 请求 files/image 官方接口
     try {
-      const res = await fetch(targetUrl, {
+      const imgApi = `${PAN115_ENDPOINTS.imageInfo}?pickcode=${urlOrPickcode}`;
+      const r = await fetch(imgApi, {
         headers: {
           Cookie: activeCookie,
           Referer: "https://115.com/",
           Origin: "https://115.com",
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
         },
-        signal: AbortSignal.timeout(4500),
+        signal: AbortSignal.timeout(4000),
       });
-
-      if (res.ok) {
-        const ct = res.headers.get("content-type") || "";
-        if (ct.includes("image") || ct.includes("octet-stream") || ct.includes("jpeg") || ct.includes("png")) {
-          const buf = await res.arrayBuffer();
-          if (buf.byteLength > 400) {
-            const mime = ct.includes("png") ? "image/png" : "image/jpeg";
-            const b64 = Buffer.from(buf).toString("base64");
-            return `data:${mime};base64,${b64}`;
-          }
+      if (r.ok) {
+        const j = (await r.json()) as { data?: { url?: string; origin_url?: string; thumb_url?: string } };
+        if (j.data) {
+          if (j.data.origin_url) directUrls.push(j.data.origin_url);
+          if (j.data.url) directUrls.push(j.data.url);
+          if (j.data.thumb_url) directUrls.push(j.data.thumb_url);
         }
       }
     } catch {
-      // try next
+      // ignore
+    }
+
+    // 2. 请求 files/video 官方接口获取转码封面与快照直链
+    try {
+      const vidApi = `${PAN115_ENDPOINTS.videoInfo}?pickcode=${urlOrPickcode}`;
+      const r = await fetch(vidApi, {
+        headers: {
+          Cookie: activeCookie,
+          Referer: "https://115.com/",
+          Origin: "https://115.com",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (r.ok) {
+        const j = (await r.json()) as { data?: { thumb_url?: string; snap_url?: string; cover_url?: string } };
+        if (j.data) {
+          if (j.data.thumb_url) directUrls.push(j.data.thumb_url);
+          if (j.data.snap_url) directUrls.push(j.data.snap_url);
+          if (j.data.cover_url) directUrls.push(j.data.cover_url);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. 官方图片服务器直链
+    directUrls.push(`https://img.115.com/?ct=img&ac=index&pick_code=${urlOrPickcode}`);
+  }
+
+  // 抓取图片二进制数据 (执行手动 302 重定向跟踪并保持 Cookie 与 Referer)
+  for (const rawUrl of directUrls) {
+    let curUrl = rawUrl;
+    for (let hop = 0; hop < 5; hop++) {
+      try {
+        const res = await fetch(curUrl, {
+          method: "GET",
+          headers: {
+            Cookie: activeCookie,
+            Referer: "https://115.com/",
+            Origin: "https://115.com",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          },
+          redirect: "manual",
+          signal: AbortSignal.timeout(5000),
+        });
+
+        // 遇到 301/302 重定向时，提取 Location 并手动继承 Cookie 请求下一跳
+        if ([301, 302, 303, 307, 308].includes(res.status)) {
+          const loc = res.headers.get("location");
+          if (loc) {
+            curUrl = loc.startsWith("http") ? loc : new URL(loc, curUrl).toString();
+            continue;
+          }
+        }
+
+        if (res.ok) {
+          const ct = res.headers.get("content-type") || "";
+          const buf = await res.arrayBuffer();
+          if (buf.byteLength > 400) {
+            const u8 = new Uint8Array(buf);
+            const isJpeg = u8[0] === 0xff && u8[1] === 0xd8;
+            const isPng = u8[0] === 0x89 && u8[1] === 0x50;
+            const isWebp = u8[0] === 0x52 && u8[1] === 0x49;
+
+            if (isJpeg || isPng || isWebp || ct.includes("image")) {
+              const mime = isPng ? "image/png" : isWebp ? "image/webp" : "image/jpeg";
+              const b64 = Buffer.from(buf).toString("base64");
+              return `data:${mime};base64,${b64}`;
+            }
+          }
+        }
+        break;
+      } catch {
+        break;
+      }
     }
   }
 
