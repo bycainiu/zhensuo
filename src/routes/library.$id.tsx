@@ -51,7 +51,13 @@ function VideoDetail() {
       {focus && (
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           <div className="relative aspect-video bg-elevated">
-            <img src={focus.still} alt="" className="h-full w-full object-cover" />
+            <img
+              src={focus.still}
+              alt=""
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              className="h-full w-full object-cover"
+            />
             {regions
               .filter((r) => r.frameId === focus.id && r.viewType === "person_tight" && r.bbox)
               .map((r) => (
@@ -96,7 +102,13 @@ function VideoDetail() {
                 className="block overflow-hidden rounded-lg border border-border bg-surface hover:border-line"
               >
                 <div className="aspect-video overflow-hidden bg-elevated">
-                  <img src={f.still} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={f.still}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
                 <div className="flex items-center justify-between px-3 py-2 text-xs">
                   <span className="font-mono tabular">{formatClock(f.timestamp)}</span>

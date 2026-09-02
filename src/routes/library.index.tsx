@@ -81,6 +81,8 @@ function Grid({ videos }: { videos: Awaited<ReturnType<typeof listVideos>> }) {
               <img
                 src={v.poster}
                 alt=""
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
               />
               <span className="absolute bottom-2 right-2 rounded-md bg-bg/85 px-1.5 py-0.5 font-mono text-[11px] tabular text-fg">

@@ -667,7 +667,8 @@ export const startIngest = createServerFn({ method: "POST" })
     const sizeMb = data.sizeMb || 50;
     const path = data.path || `/${filename}`;
     const pickCode = data.pickCode || "";
-    const posterUrl = data.posterUrl || "/stills/studio.jpg";
+    const default115Thumb = pickCode ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb` : "";
+    const posterUrl = data.posterUrl && !data.posterUrl.includes("/stills/") ? data.posterUrl : default115Thumb;
     const sourceId = data.sourceId || "src_115_qr";
 
     // 写入或更新真实 115 视频到数据库
@@ -683,7 +684,8 @@ export const startIngest = createServerFn({ method: "POST" })
         status = 'indexing',
         title = ${title},
         filename = ${filename},
-        poster_url = ${posterUrl}
+        poster_url = ${posterUrl},
+        pick_code = ${pickCode}
     `;
 
     const jobId = `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -784,11 +786,16 @@ async function materializeVideo(id: string) {
     filename: string;
     duration_sec: number;
     poster_url: string;
+    pick_code: string;
     meta: unknown;
-  }>`select id, title, filename, duration_sec, poster_url, meta from videos where id = ${id}`;
+  }>`select id, title, filename, duration_sec, poster_url, pick_code, meta from videos where id = ${id}`;
 
   const video = rows[0];
   if (!video) return;
+
+  const meta = asJson<{ pickCode?: string }>(video.meta, {});
+  const pickCode = video.pick_code || meta.pickCode || id.replace("vid_115_", "");
+  const realVideoPoster = pickCode ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb` : video.poster_url;
 
   const existing = await sql<{ c: number }>`select count(*)::int as c from frames where video_id = ${id}`;
   if ((existing[0]?.c ?? 0) === 0) {
@@ -806,7 +813,9 @@ async function materializeVideo(id: string) {
       const t = samplePoints[idx]!;
       const frameId = `f_${id}_${idx + 1}`;
       const shotId = idx + 1;
-      const stillUrl = video.poster_url || "/stills/studio.jpg";
+      const stillUrl = pickCode
+        ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb&t=${Math.round(t)}`
+        : realVideoPoster;
 
       await sql`
         insert into frames (id, video_id, timestamp_sec, shot_id, still_url, scene_tags, objects)

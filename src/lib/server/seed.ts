@@ -118,14 +118,25 @@ const MODELS = [
 export async function seedIfEmpty() {
   const sql = await getSql();
 
-  // 清理任何遗留的历史模拟视频
-  const legacyMock = await sql<{ id: string }>`
-    select id from videos where id in ('vid_basketball', 'vid_red_dress', 'vid_office', 'vid_jacket_phone', 'vid_rain_run', 'vid_chef', 'vid_doctor', 'vid_forklift', 'vid_studio', 'vid_downjacket')
+  // 自动修复并更新现有视频与关键帧为真实 115 快照 URL
+  const studioVideos = await sql<{ id: string; pick_code: string; meta: unknown }>`
+    select id, pick_code, meta from videos where poster_url like '%/stills/%' or poster_url = ''
   `;
-  if (legacyMock.length > 0) {
-    await sql`
-      delete from videos where id in ('vid_basketball', 'vid_red_dress', 'vid_office', 'vid_jacket_phone', 'vid_rain_run', 'vid_chef', 'vid_doctor', 'vid_forklift', 'vid_studio', 'vid_downjacket')
-    `;
+  for (const sv of studioVideos) {
+    const meta = sv.meta as { pickCode?: string } | null;
+    const pc = sv.pick_code || meta?.pickCode || sv.id.replace("vid_115_", "");
+    if (pc) {
+      const realThumb = `https://imgload.115.com/?pickcode=${pc}&type=thumb`;
+      await sql`update videos set poster_url = ${realThumb}, pick_code = ${pc} where id = ${sv.id}`;
+      // 更新该视频的所有抽帧图像
+      const frames = await sql<{ id: string; timestamp_sec: number }>`
+        select id, timestamp_sec from frames where video_id = ${sv.id}
+      `;
+      for (const f of frames) {
+        const frameThumb = `https://imgload.115.com/?pickcode=${pc}&type=thumb&t=${Math.round(Number(f.timestamp_sec))}`;
+        await sql`update frames set still_url = ${frameThumb} where id = ${f.id}`;
+      }
+    }
   }
 
   const modelCount = await sql<{ c: number }>`select count(*)::int as c from models`;

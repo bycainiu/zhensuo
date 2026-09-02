@@ -375,7 +375,10 @@ export async function fetchReal115Files(
             path: `/${name}`,
             indexed: false,
             videoId: isDir ? null : `vid_115_${item.pc || item.fid}`,
-            still: item.u || null,
+            still:
+              item.u ||
+              (item.ico && item.ico.startsWith("http") ? item.ico : null) ||
+              (item.pc ? `https://imgload.115.com/?pickcode=${item.pc}&type=thumb` : null),
             updateTime: item.t,
           };
         }).filter((f) => f.isDir || videoExts.some((e) => f.name.toLowerCase().endsWith(e)));
