@@ -7,9 +7,9 @@ import { MODEL_PROFILES, QUERY_INSTRUCTION } from "@/lib/engine/embed";
 import {
   create115QrSession,
   poll115QrStatus,
-  simulate115QrScan,
   verify115Cookie,
   probeOpenApi,
+  fetchReal115Files,
 } from "@/lib/pan115/client";
 import type {
   ApiPlaygroundRequest,
@@ -307,12 +307,6 @@ export const check115QrStatus = createServerFn({ method: "POST" })
     return res;
   });
 
-export const trigger115Simulation = createServerFn({ method: "POST" })
-  .validator((input: { uid: string; status: 1 | 2; app?: Pan115AppType }) => input)
-  .handler(async ({ data }) => {
-    const ok = simulate115QrScan(data.uid, data.status, data.app ?? "ios");
-    return { ok };
-  });
 
 /**
  * 115 Cookie 登录与保存
@@ -356,56 +350,35 @@ export const browse115 = createServerFn({ method: "GET" })
     const cid = data.cid ?? "0";
     const search = data.search?.trim().toLowerCase() ?? "";
 
-    const folder = PAN_FOLDERS.find((f) => f.cid === cid) ?? PAN_FOLDERS[0]!;
-    const folders = folderChildren(cid).map((f) => ({
-      fid: f.cid,
-      pid: f.pid,
-      name: f.name,
-      isDir: true as const,
-      sizeMb: 0,
-      duration: null,
-      pickCode: "",
-      ico: "folder",
-      path: f.path,
-      indexed: false,
-      videoId: null,
-      still: null,
-    }));
+    // 查找已连接的 115 账号凭证
+    const sources = await sql<{ id: string; status: string; config: unknown }>`
+      select id, status, config from sources where id in ('src_115_qr', 'src_115_cookie') and status = 'connected'
+    `;
 
-    const prefix = folder.path === "/" ? null : folder.path;
-    let videos = VIDEOS.filter((v) => {
-      const dir = v.path.slice(0, v.path.lastIndexOf("/")) || "/";
-      if (cid === "0") return dir === "/影视素材" || dir === "/工业与职业" ? false : dir === "/";
-      return dir === prefix;
-    });
-
-    if (search) {
-      videos = VIDEOS.filter(
-        (v) => v.title.toLowerCase().includes(search) || v.filename.toLowerCase().includes(search),
-      );
+    let activeCookie = "";
+    for (const s of sources) {
+      const cfg = asJson<{ cookie?: string }>(s.config, {});
+      if (cfg.cookie) {
+        activeCookie = cfg.cookie;
+        break;
+      }
     }
 
-    const db = await sql<{ id: string; status: string }>`select id, status from videos`;
-    const status = new Map(db.map((r) => [r.id, r.status]));
-    const files: PanFile[] = videos.map((v) => ({
-      fid: v.id,
-      pid: cid,
-      name: v.filename,
-      isDir: false,
-      sizeMb: v.sizeMb,
-      duration: v.duration,
-      pickCode: v.pickCode,
-      ico: "mp4",
-      path: v.path,
-      indexed: status.get(v.id) === "ready",
-      videoId: v.id,
-      still: v.poster,
-    }));
-
-    if (cid === "0" && !search) {
-      return { folder, items: [...folders] as PanFile[] };
+    // 若存在真实连接，优先请求 115 官方云端文件列表
+    if (activeCookie) {
+      const realFiles = await fetchReal115Files(activeCookie, cid, search);
+      if (realFiles.length > 0) {
+        return {
+          folder: { cid, name: cid === "0" ? "115 云端根目录" : `目录 (${cid})`, path: `/${cid}` },
+          items: realFiles,
+        };
+      }
     }
-    return { folder, items: [...folders, ...files] };
+
+    return {
+      folder: { cid: "0", name: "115 云端根目录", path: "/" },
+      items: [] as PanFile[],
+    };
   });
 
 export const save115Tokens = createServerFn({ method: "POST" })

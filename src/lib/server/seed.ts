@@ -180,10 +180,9 @@ async function seedCore() {
   await sql`
     insert into sources (id, kind, name, status, config)
     values
-      ('src_115_qr', '115_qr', '115 扫码登录 (苹果/Web)', 'connected', ${JSON.stringify({ device: "Apple iOS / iPad / Mac", user: { userName: "115_影视创作者", userId: "115_u8892", avatarUrl: "/stills/jacket-phone.jpg", isVip: true, vipLevel: "白金VIP", spaceTotalGb: 102400, spaceUsedGb: 18420, device: "Apple iOS 客户端", authMode: "qr", connectedAt: new Date().toISOString() } })}::jsonb),
+      ('src_115_qr', '115_qr', '115 扫码登录 (苹果/Web)', 'disconnected', '{}'::jsonb),
       ('src_115_cookie', '115_cookie', '115 Cookie 直连', 'disconnected', '{}'::jsonb),
-      ('src_115_demo', '115_demo', '115 演示沙箱', 'connected', ${JSON.stringify({ rootCid: "0", note: "高可用沙箱目录" })}::jsonb),
-      ('src_115_open', '115_open', '115 开放平台 (OAuth)', 'paused', ${JSON.stringify({ appId: "", appSecret: "", accessToken: "", refreshToken: "", rootCid: "0" })}::jsonb),
+      ('src_115_open', '115_open', '115 开放平台 (OAuth)', 'disconnected', '{}'::jsonb),
       ('src_upload', 'upload', '本地素材导入', 'disconnected', '{}'::jsonb)
   `;
 
