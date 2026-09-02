@@ -306,6 +306,95 @@ export const getVideo = createServerFn({ method: "POST" })
     };
   });
 
+export const updateFrameStill = createServerFn({ method: "POST" })
+  .validator((input: { frameId: string; videoId: string; stillUrl: string }) => input)
+  .handler(async ({ data }) => {
+    await seedIfEmpty();
+    const sql = await getSql();
+    await sql`update frames set still_url = ${data.stillUrl} where id = ${data.frameId}`;
+    await sql`update videos set poster_url = ${data.stillUrl} where id = ${data.videoId}`;
+    return { ok: true as const };
+  });
+
+export const triggerColabFrameExtract = createServerFn({ method: "POST" })
+  .validator((input: { videoId: string; cookie?: string }) => input)
+  .handler(async ({ data }) => {
+    await seedIfEmpty();
+    const sql = await getSql();
+
+    const videoRows = await sql<{
+      id: string;
+      title: string;
+      filename: string;
+      duration_sec: number;
+      pick_code: string;
+      meta: unknown;
+    }>`select id, title, filename, duration_sec, pick_code, meta from videos where id = ${data.videoId}`;
+    const video = videoRows[0];
+    if (!video) return { ok: false, error: "视频不存在" };
+
+    const colabSetting = await sql<{ value: unknown }>`select value from settings where key = 'colab_url'`;
+    const colabUrl = colabSetting[0] ? asJson<string>(colabSetting[0].value, "") : "";
+
+    const meta = asJson<{ pickCode?: string }>(video.meta, {});
+    const pc = video.pick_code || meta.pickCode || video.id.replace("vid_115_", "");
+    const activeCookie = data.cookie?.trim() || getGlobal115Cookie();
+
+    let framesUpdated = 0;
+    if (pc && activeCookie) {
+      const real115 = await fetch115VideoRealFrames(activeCookie, pc);
+      if (real115.poster) {
+        await sql`update videos set poster_url = ${real115.poster} where id = ${video.id}`;
+      }
+      if (real115.frames.length > 0) {
+        const frames = await sql<{ id: string }>`
+          select id from frames where video_id = ${data.videoId} order by timestamp_sec
+        `;
+        for (let idx = 0; idx < frames.length; idx++) {
+          if (real115.frames[idx]) {
+            await sql`update frames set still_url = ${real115.frames[idx]} where id = ${frames[idx]!.id}`;
+            framesUpdated++;
+          }
+        }
+      }
+    }
+
+    if (colabUrl) {
+      try {
+        const resp = await fetch(`${colabUrl.replace(/\/$/, "")}/api/v1/video/extract_frames`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_id: video.id,
+            pick_code: pc,
+            duration: Number(video.duration_sec),
+            cookie: activeCookie,
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (resp.ok) {
+          const colabJson = (await resp.json()) as { ok?: boolean; frames?: string[] };
+          if (colabJson.frames && Array.isArray(colabJson.frames)) {
+            const frames = await sql<{ id: string }>`
+              select id from frames where video_id = ${data.videoId} order by timestamp_sec
+            `;
+            for (let idx = 0; idx < frames.length; idx++) {
+              if (colabJson.frames[idx]) {
+                await sql`update frames set still_url = ${colabJson.frames[idx]} where id = ${frames[idx]!.id}`;
+                framesUpdated++;
+              }
+            }
+            if (colabJson.frames[0]) {
+              await sql`update videos set poster_url = ${colabJson.frames[0]} where id = ${video.id}`;
+            }
+          }
+        }
+      } catch {}
+    }
+
+    return { ok: true, framesUpdated };
+  });
+
 export const listModels = createServerFn({ method: "GET" }).handler(async () => {
   await seedIfEmpty();
   const sql = await getSql();

@@ -1,11 +1,14 @@
+import { useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { getVideo } from "@/lib/server/fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getVideo, triggerColabFrameExtract, updateFrameStill } from "@/lib/server/fns";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatClock } from "@/lib/utils";
 import type { ViewType } from "@/lib/types";
-
 import { getStored115Cookie } from "@/lib/pan115/client";
+import { toast } from "sonner";
+import { Sparkles, Upload, RefreshCw } from "lucide-react";
 
 type Search = { t?: number };
 
@@ -26,11 +29,38 @@ const VIEW_LABEL: Record<ViewType, string> = {
 function VideoDetail() {
   const { id } = Route.useParams();
   const { t } = Route.useSearch();
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const q = useQuery({
     queryKey: ["video", id, getStored115Cookie()],
     queryFn: () => getVideo({ data: { id, cookie: getStored115Cookie() } }),
     staleTime: 0,
   });
+
+  const extractMut = useMutation({
+    mutationFn: () => triggerColabFrameExtract({ data: { videoId: id, cookie: getStored115Cookie() } }),
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success(`GPU 抽帧完成！已更新 ${res.framesUpdated ?? 0} 个真实画面`);
+        void qc.invalidateQueries({ queryKey: ["video", id] });
+        void qc.invalidateQueries({ queryKey: ["videos"] });
+      } else {
+        toast.error(res.error || "抽帧未完成，请检查 Colab / 115 连通状态");
+      }
+    },
+  });
+
+  const uploadStillMut = useMutation({
+    mutationFn: (args: { frameId: string; videoId: string; stillUrl: string }) =>
+      updateFrameStill({ data: args }),
+    onSuccess: () => {
+      toast.success("画面帧已成功更新为真实图片！");
+      void qc.invalidateQueries({ queryKey: ["video", id] });
+      void qc.invalidateQueries({ queryKey: ["videos"] });
+    },
+  });
+
   const data = q.data;
   if (q.isLoading) return <p className="text-sm text-muted">读取成片…</p>;
   if (!data) return <p className="text-sm text-muted">未找到该成片。</p>;
@@ -38,20 +68,72 @@ function VideoDetail() {
   const { video, frames, regions, description } = data;
   const focus = frames.find((f) => t != null && Math.abs(f.timestamp - t) < 1.2) ?? frames[0];
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !focus) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        uploadStillMut.mutate({
+          frameId: focus.id,
+          videoId: video.id,
+          stillUrl: reader.result,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-8">
       <Link to="/library" className="text-xs text-muted hover:text-fg">
         ← 片库
       </Link>
-      <header className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-3xl tracking-tight md:text-4xl">{video.title}</h1>
-          <Badge tone={video.status === "ready" ? "ok" : "warn"}>
-            {video.status === "ready" ? "可检索" : video.status}
-          </Badge>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-display text-3xl tracking-tight md:text-4xl">{video.title}</h1>
+            <Badge tone={video.status === "ready" ? "ok" : "warn"}>
+              {video.status === "ready" ? "可检索" : video.status}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted">{description}</p>
+          <p className="font-mono text-[11px] text-subtle">{video.path}</p>
         </div>
-        <p className="text-sm text-muted">{description}</p>
-        <p className="font-mono text-[11px] text-subtle">{video.path}</p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={extractMut.isPending}
+            onClick={() => extractMut.mutate()}
+            className="border-accent/40 hover:bg-accent/10"
+          >
+            {extractMut.isPending ? (
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-3.5 w-3.5 text-accent" />
+            )}
+            {extractMut.isPending ? "GPU 抽取中…" : "Colab GPU 抽取原片帧"}
+          </Button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            className="border border-border"
+          >
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+            替换当前帧图片
+          </Button>
+        </div>
       </header>
 
       {focus && (
