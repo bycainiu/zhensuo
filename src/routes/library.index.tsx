@@ -12,8 +12,9 @@ export const Route = createFileRoute("/library/")({ component: LibraryPage });
 
 function LibraryPage() {
   const q = useQuery({
-    queryKey: ["videos"],
+    queryKey: ["videos", getStored115Cookie()],
     queryFn: () => listVideos({ data: { cookie: getStored115Cookie() } }),
+    staleTime: 0,
     refetchInterval: (query) => {
       const data = query.state.data;
       if (data && data.some((v) => v.status !== "ready")) {

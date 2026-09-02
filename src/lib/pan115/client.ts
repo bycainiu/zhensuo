@@ -453,6 +453,8 @@ export async function fetch115VideoRealFrames(
   const activeCookie = cookie?.trim() || getGlobal115Cookie();
   if (activeCookie) setGlobal115Cookie(activeCookie);
 
+  console.log(`[115 Frame Fetcher] 🎬 开始抓取视频画面: pickcode=${pickCode}, cookie长度=${activeCookie.length}`);
+
   let posterBase64: string | undefined = undefined;
   const framesBase64: string[] = [];
 
@@ -470,9 +472,12 @@ export async function fetch115VideoRealFrames(
       signal: AbortSignal.timeout(4500),
     });
 
+    console.log(`[115 Frame Fetcher] files/video HTTP 状态: ${res.status}`);
     if (res.ok) {
       const json = (await res.json()) as {
         state?: boolean;
+        msg?: string;
+        error?: string;
         data?: {
           thumb_url?: string;
           snap_url?: string;
@@ -482,11 +487,14 @@ export async function fetch115VideoRealFrames(
         };
       };
 
+      console.log(`[115 Frame Fetcher] files/video 响应状态 state: ${json.state}, error: ${json.error || json.msg || "none"}`);
       if (json.data) {
+        console.log(`[115 Frame Fetcher] files/video 详情字段: thumb_url=${json.data.thumb_url}, snap_url=${json.data.snap_url}, cover_url=${json.data.cover_url}`);
         const targetThumb = json.data.thumb_url || json.data.snap_url || json.data.cover_url;
         if (targetThumb) {
           const uri = await fetch115ImageAsDataUri(activeCookie, targetThumb);
           if (uri) {
+            console.log(`[115 Frame Fetcher] ✅ 成功从 files/video 提取封面 Data-URI! 字节数: ${uri.length}`);
             posterBase64 = uri;
             framesBase64.push(uri);
           }
@@ -494,7 +502,7 @@ export async function fetch115VideoRealFrames(
       }
     }
   } catch (err) {
-    console.error("[Pan115] 获取视频快照失败:", err);
+    console.error("[115 Frame Fetcher] 获取视频快照失败:", err);
   }
 
   // 2. 尝试从 115 故事板 / 雪碧图接口获取多时间戳真实帧
@@ -508,14 +516,17 @@ export async function fetch115VideoRealFrames(
       },
       signal: AbortSignal.timeout(3500),
     });
+    console.log(`[115 Frame Fetcher] files/storyboard HTTP 状态: ${sbRes.status}`);
     if (sbRes.ok) {
       const sbJson = (await sbRes.json()) as {
         state?: boolean;
+        error?: string;
         data?: {
           thumb?: string;
           list?: Array<{ url?: string; time?: number }>;
         };
       };
+      console.log(`[115 Frame Fetcher] files/storyboard state: ${sbJson.state}, 帧数: ${sbJson.data?.list?.length ?? 0}`);
       if (sbJson.data?.list && Array.isArray(sbJson.data.list)) {
         for (const item of sbJson.data.list.slice(0, 8)) {
           if (item.url) {
@@ -527,19 +538,22 @@ export async function fetch115VideoRealFrames(
         }
       }
     }
-  } catch {
-    // ignore
+  } catch (err) {
+    console.error("[115 Frame Fetcher] 故事板拉取异常:", err);
   }
 
   // 3. 直接通过 pickcode 候选接口拉取真实转码缩略图
   if (!posterBase64) {
+    console.log(`[115 Frame Fetcher] 正在尝试通过 pickcode 直接拉取: ${pickCode}`);
     const directThumb = await fetch115ImageAsDataUri(activeCookie, pickCode);
     if (directThumb) {
+      console.log(`[115 Frame Fetcher] ✅ 成功从 pickcode 提取封面 Data-URI! 字节数: ${directThumb.length}`);
       posterBase64 = directThumb;
       if (framesBase64.length === 0) framesBase64.push(directThumb);
     }
   }
 
+  console.log(`[115 Frame Fetcher] 🏁 抓取完成: poster=${Boolean(posterBase64)}, frames数量=${framesBase64.length}`);
   return { poster: posterBase64, frames: framesBase64 };
 }
 

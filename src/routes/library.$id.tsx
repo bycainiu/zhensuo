@@ -27,8 +27,9 @@ function VideoDetail() {
   const { id } = Route.useParams();
   const { t } = Route.useSearch();
   const q = useQuery({
-    queryKey: ["video", id],
+    queryKey: ["video", id, getStored115Cookie()],
     queryFn: () => getVideo({ data: { id, cookie: getStored115Cookie() } }),
+    staleTime: 0,
   });
   const data = q.data;
   if (q.isLoading) return <p className="text-sm text-muted">读取成片…</p>;
