@@ -4,6 +4,7 @@ import { seedIfEmpty } from "./seed";
 import { VIDEOS, PAN_FOLDERS, folderChildren } from "@/lib/catalog";
 import { buildIndex, parseLexicon, parsedFromGrok, retrieve } from "@/lib/engine/search";
 import { DISPLAY_DIM, MODEL_PROFILES, QUERY_INSTRUCTION } from "@/lib/engine/embed";
+import { generateCinemaFrameDataUrl } from "@/lib/utils";
 import {
   create115QrSession,
   poll115QrStatus,
@@ -667,8 +668,7 @@ export const startIngest = createServerFn({ method: "POST" })
     const sizeMb = data.sizeMb || 50;
     const path = data.path || `/${filename}`;
     const pickCode = data.pickCode || "";
-    const default115Thumb = pickCode ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb` : "";
-    const posterUrl = data.posterUrl && !data.posterUrl.includes("/stills/") ? data.posterUrl : default115Thumb;
+    const posterUrl = generateCinemaFrameDataUrl(title, pickCode, 0);
     const sourceId = data.sourceId || "src_115_qr";
 
     // 写入或更新真实 115 视频到数据库
@@ -795,7 +795,7 @@ async function materializeVideo(id: string) {
 
   const meta = asJson<{ pickCode?: string }>(video.meta, {});
   const pickCode = video.pick_code || meta.pickCode || id.replace("vid_115_", "");
-  const realVideoPoster = pickCode ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb` : video.poster_url;
+  const realVideoPoster = generateCinemaFrameDataUrl(video.title, pickCode, 0);
 
   const existing = await sql<{ c: number }>`select count(*)::int as c from frames where video_id = ${id}`;
   if ((existing[0]?.c ?? 0) === 0) {
@@ -813,9 +813,7 @@ async function materializeVideo(id: string) {
       const t = samplePoints[idx]!;
       const frameId = `f_${id}_${idx + 1}`;
       const shotId = idx + 1;
-      const stillUrl = pickCode
-        ? `https://imgload.115.com/?pickcode=${pickCode}&type=thumb&t=${Math.round(t)}`
-        : realVideoPoster;
+      const stillUrl = generateCinemaFrameDataUrl(video.title, pickCode, t);
 
       await sql`
         insert into frames (id, video_id, timestamp_sec, shot_id, still_url, scene_tags, objects)

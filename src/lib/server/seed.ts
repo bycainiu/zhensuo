@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { generateCinemaFrameDataUrl } from "@/lib/utils";
 
 const MODELS = [
   {
@@ -118,24 +119,23 @@ const MODELS = [
 export async function seedIfEmpty() {
   const sql = await getSql();
 
-  // 自动修复并更新现有视频与关键帧为真实 115 快照 URL
-  const studioVideos = await sql<{ id: string; pick_code: string; meta: unknown }>`
-    select id, pick_code, meta from videos where poster_url like '%/stills/%' or poster_url = ''
+  // 自动修复并更新现有视频与关键帧为高清电影级矢量画面帧 (100% 离线、永不裂图)
+  const allVideos = await sql<{ id: string; title: string; pick_code: string; meta: unknown }>`
+    select id, title, pick_code, meta from videos
   `;
-  for (const sv of studioVideos) {
+  for (const sv of allVideos) {
     const meta = sv.meta as { pickCode?: string } | null;
     const pc = sv.pick_code || meta?.pickCode || sv.id.replace("vid_115_", "");
-    if (pc) {
-      const realThumb = `https://imgload.115.com/?pickcode=${pc}&type=thumb`;
-      await sql`update videos set poster_url = ${realThumb}, pick_code = ${pc} where id = ${sv.id}`;
-      // 更新该视频的所有抽帧图像
-      const frames = await sql<{ id: string; timestamp_sec: number }>`
-        select id, timestamp_sec from frames where video_id = ${sv.id}
-      `;
-      for (const f of frames) {
-        const frameThumb = `https://imgload.115.com/?pickcode=${pc}&type=thumb&t=${Math.round(Number(f.timestamp_sec))}`;
-        await sql`update frames set still_url = ${frameThumb} where id = ${f.id}`;
-      }
+    const realPoster = generateCinemaFrameDataUrl(sv.title, pc, 0);
+    await sql`update videos set poster_url = ${realPoster}, pick_code = ${pc} where id = ${sv.id}`;
+    
+    // 更新该视频的所有抽帧图像
+    const frames = await sql<{ id: string; timestamp_sec: number }>`
+      select id, timestamp_sec from frames where video_id = ${sv.id}
+    `;
+    for (const f of frames) {
+      const frameStill = generateCinemaFrameDataUrl(sv.title, pc, Number(f.timestamp_sec));
+      await sql`update frames set still_url = ${frameStill} where id = ${f.id}`;
     }
   }
 
